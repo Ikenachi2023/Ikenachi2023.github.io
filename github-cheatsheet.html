@@ -431,8 +431,10 @@
         <ol class="steps">
           <li>画面左下の<b>ステータスバー</b>に表示されているブランチ名をクリックする。</li>
           <li>画面上部に候補一覧が出るので<code>+ 新しいブランチの作成...</code>を選ぶ。</li>
-          <li>ブランチ名(例：<code>feature/add-header</code>)を入力してEnter。自動的にそのブランチへ切り替わる。</li>
+          <li>ブランチ名(例：<code>ikeda/fix-header-layout</code>)を入力してEnter。自動的にそのブランチへ切り替わる。</li>
         </ol>
+
+        <div class="tip"><b>ブランチ名のルール：</b><code>[gitのユーザー名]/[ハイフン区切りの簡単なタイトル]</code>(例：<code>ikeda/add-login-form</code>)</div>
 
         <div class="tip"><b>確認方法：</b>ステータスバーの表示がデフォルトの<code>main</code>から、決めたブランチ名に変わっていればOK。</div>
       </section>
@@ -455,6 +457,8 @@
           <li>「変更」欄に編集したファイルが並ぶので、ファイルにカーソルを合わせて<code>+</code>を押し<b>ステージング</b>する(まとめてなら「変更」の右の<code>+</code>)。</li>
           <li>上部のメッセージ欄にコミットメッセージを書いてコミットし、そのままプッシュする。</li>
         </ol>
+
+        <div class="tip"><b>コミットメッセージのルール：</b>Conventional Commit形式。先頭に<code>fix:</code>(バグ修正)、<code>feat:</code>(新機能)、<code>docs:</code>(ドキュメント)等を付ける(例：<code>feat: ログインフォームを追加</code>)。詳細は<a href="https://www.conventionalcommits.org/ja/v1.0.0/#概要" target="_blank" rel="noopener">Conventional Commits公式サイト</a>を参照。</div>
       </section>
 
       <section class="block pr" id="pr">
@@ -490,6 +494,8 @@
         </div>
 
         <div class="tip"><b>このチームでは：</b>説明で伝えた人がレビューを行います。<code>Reviewers</code>に設定してください。</div>
+
+        <div class="tip"><b>詳しくは：</b>PR作成画面のテンプレを参考にしてください。</div>
 
         <h3>GitHub上での操作</h3>
         <ol class="steps">
