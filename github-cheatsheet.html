@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ブランチとPRの作法</title>
+<style>
+  :root{
+    --bg:#f8f9fa;
+    --surface:#ffffff;
+    --ink:#202124;
+    --ink-soft:#5f6368;
+    --line:#dadce0;
+    --blue:#4285f4;
+    --blue-soft:#e8f0fe;
+    --red:#ea4335;
+    --red-soft:#fce8e6;
+    --yellow:#f9ab00;
+    --yellow-soft:#fef7e0;
+    --green:#34a853;
+    --green-soft:#e6f4ea;
+    --code-bg:#202124;
+    --code-ink:#e8eaed;
+    --code-key:#8ab4f8;
+    --code-str:#fdd663;
+    --shadow:0 1px 2px rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#202124;
+      --surface:#292a2d;
+      --ink:#e8eaed;
+      --ink-soft:#9aa0a6;
+      --line:#3c4043;
+      --blue:#8ab4f8;
+      --blue-soft:#2d3748;
+      --red:#f28b82;
+      --red-soft:#3d2a2a;
+      --yellow:#fdd663;
+      --yellow-soft:#3d3420;
+      --green:#81c995;
+      --green-soft:#1e3a29;
+      --code-bg:#131314;
+      --code-ink:#e8eaed;
+      --code-key:#8ab4f8;
+      --code-str:#fdd663;
+      --shadow:0 1px 2px rgba(0,0,0,.5), 0 1px 3px 1px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#202124;
+    --surface:#292a2d;
+    --ink:#e8eaed;
+    --ink-soft:#9aa0a6;
+    --line:#3c4043;
+    --blue:#8ab4f8;
+    --blue-soft:#2d3748;
+    --red:#f28b82;
+    --red-soft:#3d2a2a;
+    --yellow:#fdd663;
+    --yellow-soft:#3d3420;
+    --green:#81c995;
+    --green-soft:#1e3a29;
+    --code-bg:#131314;
+    --code-ink:#e8eaed;
+    --code-key:#8ab4f8;
+    --code-str:#fdd663;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 1px 3px 1px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Roboto','Hiragino Sans','Noto Sans JP',sans-serif;
+    line-height:1.7;
+  }
+
+  /* ---------- header ---------- */
+  header.hero{
+    max-width:1120px;
+    margin:0 auto;
+    padding:48px 24px 32px;
+  }
+  .eyebrow-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:16px;
+  }
+  .eyebrow{
+    font-size:12.5px;
+    font-weight:500;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--blue);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:8px;height:8px;border-radius:50%;
+    background:var(--blue);
+  }
+  .audience{
+    font-size:12px;
+    font-weight:500;
+    color:var(--ink-soft);
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:99px;
+    padding:3px 12px;
+  }
+  h1{
+    font-weight:400;
+    font-size:clamp(28px,4.5vw,38px);
+    letter-spacing:-0.01em;
+    text-wrap:balance;
+    margin:0 0 12px;
+  }
+  .lede{
+    color:var(--ink-soft);
+    font-size:15.5px;
+    max-width:64ch;
+    margin:0 0 32px;
+  }
+
+  /* ---------- flow stepper ---------- */
+  .flow{
+    display:flex;
+    align-items:stretch;
+    background:var(--surface);
+    border-radius:12px;
+    box-shadow:var(--shadow);
+    padding:20px 16px;
+    overflow-x:auto;
+  }
+  .flow a{
+    flex:1 1 0;
+    min-width:108px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    gap:8px;
+    text-decoration:none;
+    color:var(--ink);
+    padding:4px 6px;
+    position:relative;
+  }
+  .flow a::after{
+    content:"";
+    position:absolute;
+    top:15px; left:calc(50% + 22px);
+    width:calc(100% - 44px);
+    height:2px;
+    background:var(--line);
+  }
+  .flow a:last-child::after{display:none;}
+  .flow .dot{
+    width:30px;height:30px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:13px;
+    font-weight:500;
+    color:#fff;
+    z-index:1;
+  }
+  .flow .label{font-size:12.5px;font-weight:500;}
+  .step-branch .dot{background:var(--blue);}
+  .step-commit .dot{background:var(--blue);}
+  .step-pr .dot{background:var(--red);}
+  .step-review .dot{background:var(--yellow);}
+  .step-merge .dot{background:var(--green);}
+
+  /* ---------- holy grail layout ---------- */
+  .layout{
+    max-width:1120px;
+    margin:0 auto;
+    padding:8px 24px 64px;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 200px;
+    gap:28px;
+    align-items:start;
+  }
+  nav.toc{
+    position:sticky;
+    top:24px;
+    background:var(--surface);
+    border-radius:12px;
+    box-shadow:var(--shadow);
+    padding:18px 8px;
+  }
+  nav.toc .toc-label{
+    font-size:11px;
+    font-weight:500;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    padding:0 14px 10px;
+  }
+  nav.toc ol{
+    list-style:none;
+    margin:0;
+    padding:0;
+  }
+  nav.toc a{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    text-decoration:none;
+    color:var(--ink);
+    font-size:13.5px;
+    padding:9px 14px;
+    border-radius:8px;
+  }
+  nav.toc a:hover{background:var(--bg);}
+  nav.toc a .n{
+    width:18px;height:18px;
+    border-radius:50%;
+    flex-shrink:0;
+    font-size:10.5px;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:500;
+  }
+  nav.toc .n-branch{background:var(--blue);}
+  nav.toc .n-commit{background:var(--blue);}
+  nav.toc .n-pr{background:var(--red);}
+  nav.toc .n-review{background:var(--yellow);}
+  nav.toc .n-merge{background:var(--green);}
+
+  main{min-width:0;}
+
+  /* ---------- content blocks ---------- */
+  section.block{
+    scroll-margin-top:24px;
+    margin-bottom:28px;
+    background:var(--surface);
+    border-radius:12px;
+    padding:30px 32px 34px;
+    box-shadow:var(--shadow);
+  }
+  .block-head{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin-bottom:6px;
+  }
+  .block-num{
+    width:30px;height:30px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:14px;
+    color:#fff;
+    border-radius:50%;
+    font-weight:500;
+    flex-shrink:0;
+  }
+  .block.branch .block-num{background:var(--blue);}
+  .block.commit .block-num{background:var(--blue);}
+  .block.pr .block-num{background:var(--red);}
+  .block.review .block-num{background:var(--yellow);}
+  .block.merge .block-num{background:var(--green);}
+
+  h2{
+    font-weight:500;
+    font-size:21px;
+    margin:0;
+    letter-spacing:0;
+  }
+
+  h3{
+    font-size:12px;
+    font-weight:500;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:28px 0 12px;
+  }
+
+  .analogy{
+    display:flex;
+    gap:14px;
+    background:var(--blue-soft);
+    border-radius:8px;
+    padding:16px 18px;
+    margin-top:16px;
+  }
+  .block.pr .analogy{background:var(--red-soft);}
+  .block.review .analogy{background:var(--yellow-soft);}
+  .block.merge .analogy{background:var(--green-soft);}
+  .analogy .glyph{
+    font-size:20px;
+    color:var(--blue);
+    flex-shrink:0;
+    line-height:1.5;
+  }
+  .block.pr .analogy .glyph{color:var(--red);}
+  .block.review .analogy .glyph{color:var(--yellow);}
+  .block.merge .analogy .glyph{color:var(--green);}
+  .analogy p{margin:0;font-size:14.5px;color:var(--ink);}
+  .analogy strong{font-weight:500;}
+
+  p{margin:0 0 14px;font-size:15px;}
+
+  ol.steps{
+    list-style:none;
+    margin:0 0 8px;
+    padding:0;
+    counter-reset:step;
+  }
+  ol.steps li{
+    counter-increment:step;
+    position:relative;
+    padding-left:38px;
+    margin-bottom:16px;
+    font-size:15px;
+  }
+  ol.steps li::before{
+    content:counter(step);
+    position:absolute;
+    left:0; top:-1px;
+    width:24px;height:24px;
+    border-radius:50%;
+    background:var(--bg);
+    color:var(--ink-soft);
+    font-size:12px;
+    font-weight:500;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  ol.steps li code, p code{
+    background:var(--blue-soft);
+    color:var(--ink);
+    padding:1.5px 6px;
+    border-radius:4px;
+    font-family:'Roboto Mono','Consolas',monospace;
+    font-size:13px;
+  }
+  .block.pr ol.steps li code{background:var(--red-soft);}
+  .block.review ol.steps li code{background:var(--yellow-soft);}
+  .block.merge ol.steps li code{background:var(--green-soft);}
+
+  .tip{
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    background:var(--bg);
+    border-radius:8px;
+    padding:12px 14px;
+    margin-top:16px;
+    font-size:13.5px;
+    color:var(--ink-soft);
+  }
+  .tip b{color:var(--ink);font-weight:500;}
+  .tip code{
+    background:var(--surface);
+    padding:1.5px 6px;
+    border-radius:4px;
+    font-family:'Roboto Mono','Consolas',monospace;
+    font-size:12.5px;
+  }
+
+  footer.page-footer{
+    max-width:1120px;
+    margin:0 auto;
+    padding:0 24px 64px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  footer a{color:var(--blue);text-decoration:none;}
+  footer a:hover{text-decoration:underline;}
+
+  @media (max-width:860px){
+    .layout{grid-template-columns:1fr;}
+    nav.toc{position:static;}
+    aside.rail{position:static;}
+  }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap">
+</head>
+<body>
+
+  <header class="hero">
+    <div class="eyebrow-row">
+      <div class="eyebrow">GitHub Cheat Sheet</div>
+      <div class="audience">対象：チームメンバー</div>
+      <div class="audience">Gitクライアント：VS Code</div>
+    </div>
+    <h1>GitHubチートシート</h1>
+    <p class="lede">ブランチの作成からPRのマージまでの流れをまとめる。すべての操作はVS Codeのソース管理機能を使う前提で解説する。</p>
+
+    <nav class="flow" aria-label="作業の流れ">
+      <a class="step-branch" href="#branch"><span class="dot">1</span><span class="label">ブランチを切る</span></a>
+      <a class="step-commit" href="#commit"><span class="dot">2</span><span class="label">コミット&amp;プッシュ</span></a>
+      <a class="step-pr" href="#pr"><span class="dot">3</span><span class="label">PR作成</span></a>
+      <a class="step-review" href="#review"><span class="dot">4</span><span class="label">レビュー</span></a>
+      <a class="step-merge" href="#merge"><span class="dot">5</span><span class="label">マージ</span></a>
+    </nav>
+  </header>
+
+  <div class="layout">
+
+    <main>
+
+      <section class="block branch" id="branch">
+        <div class="block-head">
+          <span class="block-num">1</span>
+          <h2>ブランチを切る</h2>
+        </div>
+
+        <h3>意味と必要性</h3>
+        <div class="analogy">
+          <span class="glyph">§</span>
+          <p><strong>ブランチ = mainから作業用のコピーを1本切り出すこと。</strong>mainを直接汚さずに、自分の作業スペースの中で自由に変更・実験ができる。失敗してもmainには一切影響しない。うまくいった変更だけを、あとでPRを使ってmainに反映すればいい。</p>
+        </div>
+
+        <h3>VS Code上での操作</h3>
+        <ol class="steps">
+          <li>画面左下の<b>ステータスバー</b>に表示されているブランチ名をクリックする。</li>
+          <li>画面上部に候補一覧が出るので<code>+ 新しいブランチの作成...</code>を選ぶ。</li>
+          <li>ブランチ名(例：<code>feature/add-header</code>)を入力してEnter。自動的にそのブランチへ切り替わる。</li>
+        </ol>
+
+        <div class="tip"><b>確認方法：</b>ステータスバーの表示がデフォルトの<code>main</code>から、決めたブランチ名に変わっていればOK。</div>
+      </section>
+
+      <section class="block commit" id="commit">
+        <div class="block-head">
+          <span class="block-num">2</span>
+          <h2>コミット&amp;プッシュ</h2>
+        </div>
+
+        <h3>意味と必要性</h3>
+        <div class="analogy">
+          <span class="glyph">◇</span>
+          <p><strong>コミット = 変更内容を記録すること。プッシュ = その記録をGitHub上のクラウドにも反映すること。</strong>コミットまではローカルPCの中だけの話で、プッシュして初めてチームの誰からも見える状態になる。</p>
+        </div>
+
+        <h3>VS Code上での操作</h3>
+        <ol class="steps">
+          <li>アクティビティバーの<b>ソース管理</b>アイコンを開く。</li>
+          <li>「変更」欄に編集したファイルが並ぶので、ファイルにカーソルを合わせて<code>+</code>を押し<b>ステージング</b>する(まとめてなら「変更」の右の<code>+</code>)。</li>
+          <li>上部のメッセージ欄にコミットメッセージを書いてコミットし、そのままプッシュする。</li>
+        </ol>
+      </section>
+
+      <section class="block pr" id="pr">
+        <div class="block-head">
+          <span class="block-num">3</span>
+          <h2>Pull Request（PR）を作成</h2>
+        </div>
+
+        <h3>意味と必要性</h3>
+        <div class="analogy">
+          <span class="glyph">⇄</span>
+          <p><strong>PR = 自分のブランチの変更を、mainに反映してほしいという申請。</strong>いきなりmainに反映せず、一度他の人に変更内容を見てもらうことで、バグの混入を防ぎ、変更の意図をチーム全体で共有できる。</p>
+        </div>
+
+        <h3>GitHub上での操作</h3>
+        <ol class="steps">
+          <li>当該のGitHubリポジトリページを開く。</li>
+          <li><code>Compare &amp; pull request</code>ボタンが出ているので押す。</li>
+          <li>タイトルと説明欄に「何を・なぜ変更したか」を書き、<code>Create pull request</code>を押す。</li>
+        </ol>
+      </section>
+
+      <section class="block review" id="review">
+        <div class="block-head">
+          <span class="block-num">4</span>
+          <h2>レビューしてもらう</h2>
+        </div>
+
+        <h3>意味と必要性</h3>
+        <div class="analogy">
+          <span class="glyph">◎</span>
+          <p><strong>合流前に、第三者の目で変更内容をチェックしてもらう工程。</strong>自分では気づけない考慮漏れやバグを防ぎ、チーム内で変更の意図を共有する役割もある。</p>
+        </div>
+
+        <div class="tip"><b>このチームでは：</b>説明で伝えた人がレビューを行います。<code>Reviewers</code>に設定してください。</div>
+
+        <h3>GitHub上での操作</h3>
+        <ol class="steps">
+          <li>GitHub上のPR画面右側にある<code>Reviewers</code>の歯車アイコンをクリックする。</li>
+          <li>レビュー担当者をリストから選択して<code>Reviewers</code>に設定する。</li>
+          <li>あとは担当者からの応答(<code>コメント</code>・<code>Request changes</code>・<code>Approve</code>)を待つ。</li>
+          <li><code>Request changes</code>が来た場合は、同じブランチで修正してコミット&amp;プッシュすれば、同じPRに自動で追加される。</li>
+        </ol>
+
+        <div class="tip"><b>Tips：</b><code>LGTM</code>(Look Good To Me)は「いいよ」という意味。承認コメントでよく使われる。</div>
+      </section>
+
+      <section class="block merge" id="merge">
+        <div class="block-head">
+          <span class="block-num">5</span>
+          <h2>マージ</h2>
+        </div>
+
+        <h3>意味と必要性</h3>
+        <div class="analogy">
+          <span class="glyph">✓</span>
+          <p><strong>承認された変更を、mainに正式に取り込むこと。</strong>これで自分のブランチの変更がmainに統合され、チーム全員がその変更を使える状態になる。</p>
+        </div>
+
+        <h3>GitHub上での操作</h3>
+        <ol class="steps">
+          <li><code>Approve</code>が揃ったら、PR画面の<code>Merge pull request</code>を押す。</li>
+          <li>続けて表示される<code>Delete branch</code>を押し、役目を終えたブランチを削除する。</li>
+        </ol>
+
+        <h3>VS Code上での操作</h3>
+        <ol class="steps">
+          <li>ブランチを<code>main</code>に切り替えてpullし、最新化する。</li>
+        </ol>
+      </section>
+
+    </main>
+
+    <nav class="toc" aria-label="目次">
+      <div class="toc-label">On this page</div>
+      <ol>
+        <li><a href="#branch"><span class="n n-branch">1</span>ブランチを切る</a></li>
+        <li><a href="#commit"><span class="n n-commit">2</span>コミット&amp;プッシュ</a></li>
+        <li><a href="#pr"><span class="n n-pr">3</span>PRを作成</a></li>
+        <li><a href="#review"><span class="n n-review">4</span>レビュー依頼</a></li>
+        <li><a href="#merge"><span class="n n-merge">5</span>マージ</a></li>
+      </ol>
+    </nav>
+
+  </div>
+
+  <footer class="page-footer"><a href="index.html">← ホームに戻る</a> · github-cheatsheet · branch &amp; pull request basics</footer>
+
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>いけなちのホームページ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Product+Sans:wght@400;700&family=Roboto:wght@400;500;700&display=swap">
+<style>
+  :root{
+    --bg:#ffffff;
+    --surface:#ffffff;
+    --ink:#202124;
+    --ink-soft:#5f6368;
+    --line:#dadce0;
+    --hover:#f8f9fa;
+    --blue:#4285f4;
+    --red:#ea4335;
+    --yellow:#fbbc05;
+    --green:#34a853;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#202124;
+      --surface:#202124;
+      --ink:#e8eaed;
+      --ink-soft:#9aa0a6;
+      --line:#5f6368;
+      --hover:#303134;
+      --blue:#8ab4f8;
+      --red:#f28b82;
+      --yellow:#fdd663;
+      --green:#81c995;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#202124;
+    --surface:#202124;
+    --ink:#e8eaed;
+    --ink-soft:#9aa0a6;
+    --line:#5f6368;
+    --hover:#303134;
+    --blue:#8ab4f8;
+    --red:#f28b82;
+    --yellow:#fdd663;
+    --green:#81c995;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Roboto','Hiragino Sans','Noto Sans JP',sans-serif;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .page{
+    width:100%;
+    max-width:560px;
+    padding:32px 24px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+
+  h1.logo{
+    font-family:'Product Sans','Roboto',sans-serif;
+    font-weight:700;
+    font-size:44px;
+    letter-spacing:-0.01em;
+    margin:0 0 8px;
+    text-align:center;
+  }
+  h1.logo .c1{color:var(--blue);}
+  h1.logo .c2{color:var(--red);}
+  h1.logo .c3{color:var(--yellow);}
+  h1.logo .c4{color:var(--blue);}
+  h1.logo .c5{color:var(--green);}
+  h1.logo .c6{color:var(--red);}
+  h1.logo .rest{color:var(--ink);}
+
+  p.lede{
+    color:var(--ink-soft);
+    font-size:15px;
+    margin:0 0 36px;
+    text-align:center;
+  }
+
+  .search-box{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .search-box a{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    width:100%;
+    padding:13px 20px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:24px;
+    text-decoration:none;
+    color:var(--ink);
+    font-size:15px;
+    transition:box-shadow .15s ease, border-color .15s ease;
+  }
+  .search-box a:hover{
+    box-shadow:0 1px 6px rgba(32,33,36,0.18);
+    border-color:transparent;
+  }
+  :root[data-theme="dark"] .search-box a:hover{
+    box-shadow:0 1px 6px rgba(0,0,0,0.5);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) .search-box a:hover{
+      box-shadow:0 1px 6px rgba(0,0,0,0.5);
+    }
+  }
+  .search-box a .icon{
+    width:18px;height:18px;flex-shrink:0;
+    color:var(--ink-soft);
+  }
+  .search-box a .label{flex:1;}
+  .search-box a .arrow{
+    color:var(--ink-soft);
+    font-size:16px;
+  }
+
+  .section-label{
+    align-self:flex-start;
+    font-size:12px;
+    font-weight:500;
+    color:var(--ink-soft);
+    letter-spacing:0.02em;
+    margin:32px 0 12px 8px;
+  }
+
+  footer{
+    margin-top:48px;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <h1 class="logo"><span class="c1">い</span><span class="c2">け</span><span class="c3">な</span><span class="c4">ち</span><span class="rest">の</span><span class="c5">ホ</span><span class="c6">ーム</span><span class="rest">ページ</span></h1>
+    <p class="lede">下のリンクから各ページに移動できます</p>
+
+    <div class="section-label">こちらに飛べます</div>
+    <div class="search-box">
+      <a href="github-cheatsheet.html">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v12"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+        <span class="label">GitHubチートシート</span>
+        <span class="arrow">→</span>
+      </a>
+    </div>
+
+    <footer>ikenachi.github.io</footer>
+  </div>
+</body>
+</html>
