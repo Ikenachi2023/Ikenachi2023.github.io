@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>クイズの杜 - 音声早押しクイズ</title>
+<title>クイズの杜 - VOICEVOX 音声早押しクイズ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
   :root {
-    /* Spotify / Google Dark Theme (Default) */
+    /* Spotify / Dark Theme (Default) */
     --bg-base: #121212;
     --bg-surface: #181818;
     --bg-card: #222222;
@@ -68,11 +68,13 @@
   header {
     width: 100%;
     max-width: 900px;
-    padding: 20px 24px;
+    padding: 16px 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     z-index: 10;
+    flex-wrap: wrap;
+    gap: 12px;
   }
 
   .nav-back {
@@ -98,7 +100,40 @@
   .controls-bar {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .pill-select-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .pill-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 8px 30px 8px 14px;
+    border-radius: 500px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s;
+  }
+  .pill-select:hover {
+    border-color: var(--accent);
+  }
+  .select-arrow {
+    position: absolute;
+    right: 12px;
+    pointer-events: none;
+    font-size: 10px;
+    color: var(--text-secondary);
   }
 
   .pill-btn {
@@ -121,11 +156,6 @@
     border-color: var(--text-secondary);
     transform: scale(1.03);
   }
-  .pill-btn.active {
-    color: var(--accent);
-    border-color: var(--accent);
-    background: var(--accent-dim);
-  }
 
   /* メインコンテナ */
   .container {
@@ -138,16 +168,16 @@
     justify-content: center;
   }
 
-  /* プレイヤー風メインカード */
+  /* プレイヤーカード */
   .quiz-player-card {
     background: var(--bg-surface);
     border-radius: 28px;
-    padding: 40px 36px 36px;
+    padding: 38px 36px 36px;
     box-shadow: var(--shadow-player);
     border: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    gap: 28px;
+    gap: 26px;
     position: relative;
     backdrop-filter: blur(20px);
   }
@@ -205,6 +235,24 @@
     margin-left: 4px;
   }
 
+  .meta-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .speaker-tag {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 5px 12px;
+    border-radius: 500px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
   .meta-source {
     font-size: 13px;
     font-weight: 700;
@@ -213,7 +261,7 @@
     padding: 6px 14px;
     border-radius: 500px;
     border: 1px solid var(--border);
-    max-width: 320px;
+    max-width: 240px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -264,13 +312,13 @@
     51%, 100% { opacity: 0; }
   }
 
-  /* Spotify Big Button風 早押しコントローラー */
+  /* 早押しコントローラー */
   .buzzer-station {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 14px;
-    margin: 8px 0;
+    margin: 6px 0;
   }
 
   .big-buzzer-btn {
@@ -328,7 +376,7 @@
     color: var(--text-primary);
   }
 
-  /* 解答パネル（Spotify トラック完了風） */
+  /* 解答パネル */
   .answer-card {
     display: none;
     background: var(--bg-card);
@@ -458,15 +506,33 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
     ホーム
   </a>
+
   <div class="controls-bar">
+    <!-- 声（キャラクター）選択 -->
+    <div class="pill-select-wrapper">
+      <select class="pill-select" id="speakerSelect" title="出題者の声（キャラクター）を変更">
+        <option value="metan" selected>🌸 四国めたん (VOICEVOX)</option>
+        <option value="zundamon">🟢 ずんだもん (VOICEVOX)</option>
+        <option value="ryusei">🎙️ 青山龍星 (VOICEVOX)</option>
+        <option value="tsumugi">💛 春日部つむぎ (VOICEVOX)</option>
+        <option value="standard">🤖 ブラウザ標準音声 (高速)</option>
+      </select>
+      <span class="select-arrow">▼</span>
+    </div>
+
+    <!-- 速度設定 -->
     <button class="pill-btn" id="btnSpeed" title="読み上げ速度を変更">
       <span>🐢</span> 速度: <span id="speedLabel">ゆっくり</span>
     </button>
+
+    <!-- 音声ON/OFF -->
     <button class="pill-btn" id="btnSound" title="音声・効果音ON/OFF">
       <span>🔊</span> <span id="soundText">音声 ON</span>
     </button>
+
+    <!-- テーマ切り替え -->
     <button class="pill-btn" id="btnTheme" title="テーマ切り替え">
-      <span id="themeIcon">🌓</span>
+      <span>🌓</span>
     </button>
   </div>
 </header>
@@ -496,7 +562,10 @@
           <span class="q-total-text" id="totalCountText">/ 950問</span>
         </div>
       </div>
-      <div class="meta-source" id="sourceText">マンオブサイヤー</div>
+      <div class="meta-right">
+        <span class="speaker-tag" id="currentSpeakerTag">🌸 四国めたん</span>
+        <div class="meta-source" id="sourceText">マンオブサイヤー</div>
+      </div>
     </div>
 
     <!-- 歌詞スタイル 問題文スクリーン -->
@@ -538,13 +607,18 @@
 <footer>
   <div style="max-width: 680px; margin: 0 auto;">
     <p>
+      <strong>【音声クレジット】</strong><br>
+      音声合成: <a href="https://voicevox.hiroshiba.jp/" target="_blank" rel="noopener">VOICEVOX</a>（四国めたん / ずんだもん / 青山龍星 / 春日部つむぎ）<br>
+      API連携: TTS Quest
+    </p>
+    <p style="margin-top: 10px;">
       <strong>【データ出典・クレジット】</strong><br>
-      本ツールの問題データは、<a href="https://quiz-schedule.info/quiz_no_mori/" target="_blank" rel="noopener">クイズの杜</a>（新・一心精進移管アーカイブ）にて公開されている「マンオブサイヤー」等の大会記録・オープンデータを引用・活用させていただいております。
+      問題データ: <a href="https://quiz-schedule.info/quiz_no_mori/" target="_blank" rel="noopener">クイズの杜</a>（新・一心精進移管アーカイブ / マンオブサイヤー等）
     </p>
     <p style="margin-top: 10px;">
       <strong>【利用方針・権利者様へ】</strong><br>
       本ページは個人の早押しクイズ学習・研究を目的とした<strong>非営利・無料のファンメイドツール</strong>です。<br>
-      作問者様および大会運営・権利者様からの掲載取り下げや修正等のご要望がございましたら、速やかに対応・削除いたします。
+      作問者様および大会運営・権利者様からの掲載取り下げ等のご要望がございましたら、速やかに対応・削除いたします。
     </p>
     <p style="margin-top: 14px; font-size: 11px;">
       &copy; ikenachi.github.io
@@ -558,16 +632,31 @@ let questions = [];
 let currentIndex = 0;
 let currentQuestion = null;
 
+// 音声・キャラクター設定
+// VOICEVOX 話者ID: 四国めたん(ノーマル: 2), ずんだもん(ノーマル: 3), 青山龍星(ノーマル: 13), 春日部つむぎ(ノーマル: 8)
+const SPEAKER_MAP = {
+  metan: { id: 2, name: '🌸 四国めたん' },
+  zundamon: { id: 3, name: '🟢 ずんだもん' },
+  ryusei: { id: 13, name: '🎙️ 青山龍星' },
+  tsumugi: { id: 8, name: '💛 春日部つむぎ' },
+  standard: { id: null, name: '🤖 標準音声' }
+};
+let selectedSpeakerKey = 'metan';
+
 // 読み上げ・文字送り制御
 let isReading = false;
 let isStopped = false;
 let isRevealed = false;
-let speechRate = 0.85; // デフォルト：ゆっくり
+let speechRate = 0.85; // ゆっくり
 let soundEnabled = true;
 
 let charTimer = null;
 let spokenCharCount = 0;
 let currentFullText = "";
+
+// 音声再生オブジェクト
+let currentAudio = null;
+let currentVoicevoxUrl = null;
 
 // Web Audio API（早押し音）
 const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -621,7 +710,6 @@ async function loadQuizData() {
     initQuizView();
   } catch (err) {
     console.warn('quiz_data.json load fallback:', err);
-    // フォールバックデータ
     questions = [
       { q: "日本で一番高い山は富士山ですが、二番目に高い山は何でしょう？", a: "北岳", source: "競技クイズ定番" },
       { q: "元素記号「Au」で表される金属は何でしょう？", a: "金", source: "競技クイズ定番" },
@@ -642,9 +730,8 @@ function initQuizView() {
 }
 
 // 問題の出題開始
-function startQuestion(index) {
-  window.speechSynthesis.cancel();
-  clearInterval(charTimer);
+async function startQuestion(index) {
+  stopCurrentSpeech();
 
   if (index >= questions.length) {
     questions = questions.sort(() => Math.random() - 0.5);
@@ -671,20 +758,100 @@ function startQuestion(index) {
   btnBuzzer.disabled = false;
   btnBuzzer.classList.remove('pressed');
 
-  speakAndStreamText(currentFullText);
+  // 音声合成と再生の開始
+  playQuestionVoice(currentFullText);
 }
 
-// 音声読み上げと文字送りの同期処理
-function speakAndStreamText(text) {
+// 音声再生（VOICEVOX / Web Speech API ハイブリッド）
+async function playQuestionVoice(text) {
+  const speaker = SPEAKER_MAP[selectedSpeakerKey];
+  document.getElementById('currentSpeakerTag').innerText = speaker.name;
+
+  // VOICEVOX の話者IDが指定されている場合
+  if (speaker.id !== null && soundEnabled) {
+    try {
+      // 読み上げ開始プレースホルダー（文字送り準備）
+      startVoicevoxStream(text, speaker.id);
+      return;
+    } catch (e) {
+      console.warn('VOICEVOX API request failed, fallback to Web Speech:', e);
+    }
+  }
+
+  // フォールバック or 標準音声
+  startWebSpeechStream(text);
+}
+
+// VOICEVOX (TTS.quest API) での再生と文字送り同期
+async function startVoicevoxStream(text, speakerId) {
+  // TTS.quest API エンドポイント
+  const apiUrl = `https://api.tts.quest/v3/voicevox/synthesis?speaker=${speakerId}&text=${encodeURIComponent(text)}`;
+
+  try {
+    const res = await fetch(apiUrl);
+    if (!res.ok) throw new Error('API response not ok');
+    const data = await res.json();
+    if (!data.mp3StreamingUrl && !data.mp3DownloadUrl) throw new Error('No audio URL');
+
+    const audioUrl = data.mp3StreamingUrl || data.mp3DownloadUrl;
+    currentAudio = new Audio(audioUrl);
+    currentAudio.playbackRate = speechRate >= 1.0 ? 1.0 : (speechRate <= 0.7 ? 0.85 : 0.92);
+
+    currentAudio.addEventListener('loadedmetadata', () => {
+      if (isStopped || !isReading) return;
+      const durationSec = currentAudio.duration;
+      // 音声の長さに合わせて文字送りタイマーを同期
+      const totalChars = text.length;
+      const msPerChar = Math.max(30, Math.round((durationSec * 1000) / totalChars));
+
+      clearInterval(charTimer);
+      charTimer = setInterval(() => {
+        if (isStopped || !isReading) {
+          clearInterval(charTimer);
+          return;
+        }
+        if (spokenCharCount < text.length) {
+          spokenCharCount++;
+          renderSpokenText();
+        } else {
+          clearInterval(charTimer);
+          document.getElementById('textCursor').style.display = 'none';
+        }
+      }, msPerChar);
+
+      currentAudio.play();
+    });
+
+    currentAudio.addEventListener('ended', () => {
+      isReading = false;
+      spokenCharCount = text.length;
+      renderSpokenText();
+      document.getElementById('textCursor').style.display = 'none';
+    });
+
+    currentAudio.addEventListener('error', () => {
+      console.warn('Audio playback error, fallback to Web Speech');
+      startWebSpeechStream(text);
+    });
+
+  } catch (err) {
+    console.warn('VOICEVOX fetch failed, fallback to Web Speech:', err);
+    startWebSpeechStream(text);
+  }
+}
+
+// Web Speech API (ブラウザ標準) での再生
+function startWebSpeechStream(text) {
   if (!('speechSynthesis' in window)) {
-    fallbackStreamText(text);
+    fallbackTextOnly(text);
     return;
   }
 
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'ja-JP';
   utterance.rate = speechRate;
-  utterance.pitch = 1.0;
+  // めたん風に少しピッチを高めに
+  utterance.pitch = (selectedSpeakerKey === 'metan' || selectedSpeakerKey === 'zundamon') ? 1.25 : 1.0;
 
   const msPerChar = Math.round(240 / speechRate);
 
@@ -720,16 +887,12 @@ function speakAndStreamText(text) {
     }
   };
 
-  utterance.onerror = () => {
-    isReading = false;
-  };
-
   if (soundEnabled) {
     window.speechSynthesis.speak(utterance);
   }
 }
 
-function fallbackStreamText(text) {
+function fallbackTextOnly(text) {
   const msPerChar = Math.round(240 / speechRate);
   clearInterval(charTimer);
   charTimer = setInterval(() => {
@@ -754,6 +917,19 @@ function renderSpokenText() {
   container.innerText = visible;
 }
 
+// 読み上げ停止ヘルパー
+function stopCurrentSpeech() {
+  window.speechSynthesis.cancel();
+  if (currentAudio) {
+    try {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+    } catch(e) {}
+    currentAudio = null;
+  }
+  clearInterval(charTimer);
+}
+
 // 早押しボタン押下（ストップ）
 function handleBuzzer() {
   if (isStopped) return;
@@ -761,8 +937,8 @@ function handleBuzzer() {
   isStopped = true;
   isReading = false;
 
-  window.speechSynthesis.cancel();
-  clearInterval(charTimer);
+  // 音声を即時完全ストップ！
+  stopCurrentSpeech();
 
   playBuzzerSound();
 
@@ -820,6 +996,22 @@ function setupControls() {
   document.getElementById('btnReveal').addEventListener('click', revealAnswer);
   document.getElementById('btnNext').addEventListener('click', nextQuestion);
 
+  // キャラクター（声）選択
+  const speakerSelect = document.getElementById('speakerSelect');
+  speakerSelect.addEventListener('change', (e) => {
+    selectedSpeakerKey = e.target.value;
+    localStorage.setItem('quiz_speaker', selectedSpeakerKey);
+    // 現在の問題を新しい声でリスタート
+    if (!isStopped) {
+      startQuestion(currentIndex);
+    }
+  });
+  const savedSpeaker = localStorage.getItem('quiz_speaker');
+  if (savedSpeaker && SPEAKER_MAP[savedSpeaker]) {
+    selectedSpeakerKey = savedSpeaker;
+    speakerSelect.value = savedSpeaker;
+  }
+
   const btnSpeed = document.getElementById('btnSpeed');
   const speedLabel = document.getElementById('speedLabel');
   btnSpeed.addEventListener('click', () => {
@@ -843,7 +1035,7 @@ function setupControls() {
     soundText.innerText = soundEnabled ? '音声 ON' : '音声 OFF';
     btnSound.classList.toggle('active', !soundEnabled);
     if (!soundEnabled) {
-      window.speechSynthesis.cancel();
+      stopCurrentSpeech();
     }
     initAudio();
   });
