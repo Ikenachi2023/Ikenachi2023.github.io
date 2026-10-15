@@ -102,6 +102,11 @@
     color: var(--text-primary);
     border-color: var(--border-hover);
   }
+  .pill-control.active {
+    color: var(--spotify-green);
+    border-color: rgba(30, 215, 96, 0.4);
+    background: var(--spotify-green-dim);
+  }
 
   select.pill-control {
     padding-right: 28px;
@@ -541,6 +546,11 @@
   </div>
 
   <div class="header-actions">
+    <!-- 句読点の間（クイズ読み）切替 -->
+    <button class="pill-control" id="btnPauseToggle" title="句読点でタメ・間を置くクイズ読みの切り替え">
+      <span id="pauseIcon">⏸️</span> <span id="pauseText">間: ON</span>
+    </button>
+
     <!-- VOICEVOX キャラクター選択 -->
     <select class="pill-control" id="speakerSelect" title="VOICEVOX 声を選択">
       <option value="2" selected>🌸 四国めたん</option>
@@ -571,7 +581,7 @@
       <h1 class="start-title">クイズの杜 早押し</h1>
       <p class="start-subtitle">
         クイズの杜 950問の過去問アーカイブを収録。<br>
-        本物のVOICEVOX音声に合わせて早押しに挑戦しよう！
+        本物のVOICEVOX音声と、競技クイズ特有の「句読点でのタメ・間」で早押しに挑戦しよう！
       </p>
 
       <div class="char-preview-row">
@@ -655,6 +665,46 @@ let isBuzzerStopped = false;
 let isRevealed = false;
 let displayedCharCount = 0;
 let soundEnabled = true;
+let quizPauseEnabled = true; // 句読点でタメを置くクイズ読み
+
+// 句読点に「……」を挟んでVOICEVOXにクイズ特有の溜め・ポーズ（約0.6秒）を生成させる
+function formatQuizTtsText(rawText) {
+  if (!quizPauseEnabled) return rawText.trim();
+  // 文末以外の句読点（、。！？!?）の直後に「……」を挿入
+  return rawText.trim().replace(/([、。！？!?]+)(?!$)/g, '$1……');
+}
+
+// 句読点での一時停止を考慮した文字タイムライン構築
+function buildTimeline(text, pauseWeight = 3.6) {
+  const items = [];
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    items.push({ type: 'char', char: ch, charIndex: i + 1 });
+    // 句読点があり、末尾でなく、連続句読点の最後の文字であればポーズ枠を追加
+    if (quizPauseEnabled && /[、。！？!?]/.test(ch) && i < text.length - 1 && !/[、。！？!?]/.test(text[i + 1])) {
+      items.push({ type: 'pause', weight: pauseWeight, charIndex: i + 1 });
+    }
+  }
+  let totalWeight = 0;
+  for (const it of items) {
+    it.startWeight = totalWeight;
+    const w = it.type === 'pause' ? it.weight : 1.0;
+    totalWeight += w;
+    it.endWeight = totalWeight;
+  }
+  return { items, totalWeight };
+}
+
+function getCharCountAtProgress(timeline, progress) {
+  const currentWeight = progress * timeline.totalWeight;
+  for (let i = timeline.items.length - 1; i >= 0; i--) {
+    const it = timeline.items[i];
+    if (currentWeight >= it.startWeight) {
+      return it.charIndex;
+    }
+  }
+  return 0;
+}
 
 // 速度設定
 const SPEEDS = [
@@ -718,8 +768,8 @@ function playBuzzerSound() {
 
 // TTS Quest API 経由で VOICEVOX 音声を取得（ポーリング・キャッシュ付き）
 async function fetchVoicevoxMp3(text, speakerId = selectedSpeakerId) {
-  const clean = text.trim();
-  const cacheKey = `${speakerId}:${clean}`;
+  const ttsText = formatQuizTtsText(text);
+  const cacheKey = `${speakerId}:${ttsText}`;
 
   if (audioCache.has(cacheKey)) {
     return audioCache.get(cacheKey);
@@ -730,7 +780,7 @@ async function fetchVoicevoxMp3(text, speakerId = selectedSpeakerId) {
 
   const promise = (async () => {
     try {
-      const url = `https://api.tts.quest/v3/voicevox/synthesis?speaker=${speakerId}&text=${encodeURIComponent(clean)}`;
+      const url = `https://api.tts.quest/v3/voicevox/synthesis?speaker=${speakerId}&text=${encodeURIComponent(ttsText)}`;
       const res = await fetch(url);
       const data = await res.json();
 
@@ -929,15 +979,17 @@ function playVoicevoxQuestion(mp3Url, fullText) {
   });
 }
 
-// 音声再生時間と文字数の厳密な同期ループ
+// 音声再生時間と文字数の厳密な同期ループ（句読点の間・タメ対応）
 function startAudioSyncLoop(audio, fullText) {
+  const timeline = buildTimeline(fullText);
+
   function syncFrame() {
     if (isBuzzerStopped || !currentAudio || currentAudio !== audio) return;
 
     const dur = audio.duration;
     if (dur && dur > 0) {
       const progress = Math.min(1, Math.max(0, audio.currentTime / dur));
-      const targetCount = Math.floor(progress * fullText.length);
+      const targetCount = getCharCountAtProgress(timeline, progress);
       if (targetCount > displayedCharCount) {
         displayedCharCount = targetCount;
         renderTextStream(fullText, displayedCharCount);
@@ -948,26 +1000,35 @@ function startAudioSyncLoop(audio, fullText) {
   syncAnimFrame = requestAnimationFrame(syncFrame);
 }
 
-// 音声読み込み失敗時のバックアップ文字送り
+// 音声読み込み失敗時のバックアップ文字送り（句読点の間・タメ対応）
 function fallbackTextStream(fullText) {
   updateStatusBadge('playing');
   document.getElementById('cursorTicker').style.display = 'inline-block';
-  const msPerChar = Math.max(30, Math.round(220 / currentSpeed));
+  const timeline = buildTimeline(fullText);
+  let currentWeight = 0;
+  const stepMs = 30;
+  const weightPerStep = stepMs / (140 / currentSpeed);
 
   const timer = setInterval(() => {
     if (isBuzzerStopped || activeQuestionIndex !== currentIndex) {
       clearInterval(timer);
       return;
     }
-    if (displayedCharCount < fullText.length) {
-      displayedCharCount++;
+    currentWeight += weightPerStep;
+    const progress = Math.min(1, currentWeight / timeline.totalWeight);
+    const targetCount = getCharCountAtProgress(timeline, progress);
+
+    if (targetCount > displayedCharCount) {
+      displayedCharCount = targetCount;
       renderTextStream(fullText, displayedCharCount);
-    } else {
+    }
+
+    if (progress >= 1.0) {
       clearInterval(timer);
       document.getElementById('cursorTicker').style.display = 'none';
       updateStatusBadge('finished');
     }
-  }, msPerChar);
+  }, stepMs);
 }
 
 // テキスト描画
@@ -1058,6 +1119,23 @@ function setupEvents() {
 
   document.getElementById('btnReveal').addEventListener('click', revealAnswer);
   document.getElementById('btnNext').addEventListener('click', nextQuestion);
+
+  // 句読点の間（クイズ読み）切替
+  const btnPause = document.getElementById('btnPauseToggle');
+  btnPause.classList.toggle('active', quizPauseEnabled);
+  btnPause.addEventListener('click', () => {
+    quizPauseEnabled = !quizPauseEnabled;
+    btnPause.classList.toggle('active', quizPauseEnabled);
+    document.getElementById('pauseText').innerText = quizPauseEnabled ? '間: ON' : '間: OFF';
+
+    prefetchQuestion(currentIndex, selectedSpeakerId);
+    prefetchQuestion(currentIndex + 1, selectedSpeakerId);
+
+    // 出題中であれば再読み上げ
+    if (isGameStarted && !isBuzzerStopped && currentQuestion) {
+      startQuestion(currentIndex);
+    }
+  });
 
   // VOICEVOX キャラクター選択
   const spkSelect = document.getElementById('speakerSelect');
