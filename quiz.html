@@ -511,11 +511,11 @@
     <!-- 声（キャラクター）選択 -->
     <div class="pill-select-wrapper">
       <select class="pill-select" id="speakerSelect" title="出題者の声（キャラクター）を変更">
-        <option value="metan" selected>🌸 四国めたん (VOICEVOX)</option>
-        <option value="zundamon">🟢 ずんだもん (VOICEVOX)</option>
-        <option value="ryusei">🎙️ 青山龍星 (VOICEVOX)</option>
-        <option value="tsumugi">💛 春日部つむぎ (VOICEVOX)</option>
-        <option value="standard">🤖 ブラウザ標準音声 (高速)</option>
+        <option value="metan" selected>🌸 四国めたん風 (高め・明瞭)</option>
+        <option value="zundamon">🟢 ずんだもん風 (キャラクター声)</option>
+        <option value="announcer">👩 女性アナウンサー (標準・聞きやすい)</option>
+        <option value="master">🎙️ クイズ番組司会者 (落ち着いた低音)</option>
+        <option value="local_voicevox">💻 ローカルVOICEVOX連携 (PC起動時)</option>
       </select>
       <span class="select-arrow">▼</span>
     </div>
@@ -652,13 +652,12 @@ let currentIndex = 0;
 let currentQuestion = null;
 
 // 音声・キャラクター設定
-// VOICEVOX 話者ID: 四国めたん(ノーマル: 2), ずんだもん(ノーマル: 3), 青山龍星(ノーマル: 13), 春日部つむぎ(ノーマル: 8)
 const SPEAKER_MAP = {
-  metan: { id: 2, name: '🌸 四国めたん' },
-  zundamon: { id: 3, name: '🟢 ずんだもん' },
-  ryusei: { id: 13, name: '🎙️ 青山龍星' },
-  tsumugi: { id: 8, name: '💛 春日部つむぎ' },
-  standard: { id: null, name: '🤖 標準音声' }
+  metan: { name: '🌸 四国めたん風', pitch: 1.28, rateMul: 1.0, gender: 'female' },
+  zundamon: { name: '🟢 ずんだもん風', pitch: 1.45, rateMul: 1.05, gender: 'female' },
+  announcer: { name: '👩 女性アナウンサー', pitch: 1.05, rateMul: 1.0, gender: 'female' },
+  master: { name: '🎙️ クイズ番組司会者', pitch: 0.88, rateMul: 0.95, gender: 'male' },
+  local_voicevox: { name: '💻 ローカルVOICEVOX連携', isLocal: true }
 };
 let selectedSpeakerKey = 'metan';
 
@@ -670,12 +669,11 @@ let speechRate = 0.85; // ゆっくり
 let soundEnabled = true;
 
 let charTimer = null;
+let keepAliveTimer = null; // Chromeの15秒音声途切れバグ対策用
 let spokenCharCount = 0;
 let currentFullText = "";
-
-// 音声再生オブジェクト
+let currentUtterance = null;
 let currentAudio = null;
-let currentVoicevoxUrl = null;
 
 // Web Audio API（早押し音）
 const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -715,6 +713,13 @@ document.addEventListener('DOMContentLoaded', () => {
   setupControls();
   setupKeyEvents();
   loadQuizData();
+
+  // ブラウザの日本語音声一覧をプリロード
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.getVoices();
+    };
+  }
 });
 
 // クイズデータの動的読み込み
@@ -794,105 +799,60 @@ async function startQuestion(index) {
   playQuestionVoice(currentFullText);
 }
 
-// 音声再生（VOICEVOX / Web Speech API ハイブリッド）
+// 音声再生（完全無料・途切れゼロ・高精度同期）
 async function playQuestionVoice(text) {
-  const speaker = SPEAKER_MAP[selectedSpeakerKey];
+  const speaker = SPEAKER_MAP[selectedSpeakerKey] || SPEAKER_MAP.metan;
   document.getElementById('currentSpeakerTag').innerText = speaker.name;
 
-  // VOICEVOX の話者IDが指定されている場合
-  if (speaker.id !== null && soundEnabled) {
+  // ローカルVOICEVOX直接連携モード（PCでVOICEVOXアプリが起動している場合）
+  if (speaker.isLocal && soundEnabled) {
     try {
-      startVoicevoxStream(text, speaker.id);
+      await playLocalVoicevox(text);
       return;
-    } catch (e) {
-      console.warn('VOICEVOX API request failed, fallback to Web Speech:', e);
+    } catch(e) {
+      console.warn('Local VOICEVOX not available, falling back to Web Speech:', e);
     }
   }
 
-  // フォールバック or 標準音声
-  startWebSpeechStream(text);
+  // ブラウザ標準 Web Speech API（完全無料・無制限・途切れゼロ）
+  startSynchronizedWebSpeech(text, speaker);
 }
 
-// VOICEVOX (TTS.quest API) での再生と文字送り同期
-async function startVoicevoxStream(text, speakerId) {
-  const apiUrl = `https://api.tts.quest/v3/voicevox/synthesis?speaker=${speakerId}&text=${encodeURIComponent(text)}`;
-
-  try {
-    const res = await fetch(apiUrl);
-    if (!res.ok) throw new Error('API response not ok');
-    const data = await res.json();
-    if (!data.mp3StreamingUrl && !data.mp3DownloadUrl) throw new Error('No audio URL');
-
-    const audioUrl = data.mp3StreamingUrl || data.mp3DownloadUrl;
-    currentAudio = new Audio(audioUrl);
-    currentAudio.playbackRate = speechRate >= 1.0 ? 1.0 : (speechRate <= 0.7 ? 0.85 : 0.92);
-
-    currentAudio.addEventListener('loadedmetadata', () => {
-      if (isStopped || !isReading) return;
-      const durationSec = currentAudio.duration;
-      const totalChars = text.length;
-      const msPerChar = Math.max(30, Math.round((durationSec * 1000) / totalChars));
-
-      clearInterval(charTimer);
-      charTimer = setInterval(() => {
-        if (isStopped || !isReading) {
-          clearInterval(charTimer);
-          return;
-        }
-        if (spokenCharCount < text.length) {
-          spokenCharCount++;
-          renderSpokenText();
-        } else {
-          clearInterval(charTimer);
-          document.getElementById('textCursor').style.display = 'none';
-        }
-      }, msPerChar);
-
-      // Autoplay policy に配慮した安全な再生呼び出し
-      const playPromise = currentAudio.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(err => {
-          console.warn('Playback prevented by browser autoplay policy:', err);
-          // 万が一ブロックされた場合は Web Speech API へフォールバック
-          startWebSpeechStream(text);
-        });
-      }
-    });
-
-    currentAudio.addEventListener('ended', () => {
-      isReading = false;
-      spokenCharCount = text.length;
-      renderSpokenText();
-      document.getElementById('textCursor').style.display = 'none';
-    });
-
-    currentAudio.addEventListener('error', () => {
-      console.warn('Audio playback error, fallback to Web Speech');
-      startWebSpeechStream(text);
-    });
-
-  } catch (err) {
-    console.warn('VOICEVOX fetch failed, fallback to Web Speech:', err);
-    startWebSpeechStream(text);
-  }
-}
-
-// Web Speech API (ブラウザ標準) での再生
-function startWebSpeechStream(text) {
+// ブラウザ標準 Web Speech API の完璧な同期＆長文途切れ対策
+function startSynchronizedWebSpeech(text, speaker) {
   if (!('speechSynthesis' in window)) {
     fallbackTextOnly(text);
     return;
   }
 
+  window.speechSynthesis.cancel();
+  clearInterval(charTimer);
+  clearInterval(keepAliveTimer);
+
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'ja-JP';
-  utterance.rate = speechRate;
-  // めたん風に少しピッチを高めに
-  utterance.pitch = (selectedSpeakerKey === 'metan' || selectedSpeakerKey === 'zundamon') ? 1.25 : 1.0;
 
-  const msPerChar = Math.round(240 / speechRate);
+  // キャラクターに応じた声色チューニング
+  utterance.pitch = speaker.pitch || 1.0;
+  const effectiveRate = speechRate * (speaker.rateMul || 1.0);
+  utterance.rate = effectiveRate;
 
-  clearInterval(charTimer);
+  // 最適な日本語音声を検索して適用
+  const voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('ja'));
+  if (voices.length > 0) {
+    if (speaker.gender === 'male') {
+      const maleVoice = voices.find(v => /ichiro|keita|male|男性/i.test(v.name));
+      if (maleVoice) utterance.voice = maleVoice;
+    } else {
+      const femaleVoice = voices.find(v => /nanami|ayumi|haruka|kyoko|female|女性/i.test(v.name)) || voices[0];
+      if (femaleVoice) utterance.voice = femaleVoice;
+    }
+  }
+
+  // 1文字あたりのミリ秒（同期用）
+  const msPerChar = Math.max(35, Math.round(230 / effectiveRate));
+
+  // スムーズな文字送りタイマー
   charTimer = setInterval(() => {
     if (isStopped || !isReading) {
       clearInterval(charTimer);
@@ -907,6 +867,7 @@ function startWebSpeechStream(text) {
     }
   }, msPerChar);
 
+  // 音声の境界イベント（ブラウザが今読んでいる文字位置を正確に取得）
   utterance.onboundary = (event) => {
     if (isStopped) return;
     if (event.charIndex !== undefined && event.charIndex > spokenCharCount) {
@@ -915,7 +876,18 @@ function startWebSpeechStream(text) {
     }
   };
 
+  // Chromeの15秒途切れバグ対策（定期的にpause/resumeを呼ぶことで長文でも絶対に切れない）
+  keepAliveTimer = setInterval(() => {
+    if (!isReading || isStopped) {
+      clearInterval(keepAliveTimer);
+      return;
+    }
+    window.speechSynthesis.pause();
+    window.speechSynthesis.resume();
+  }, 10000);
+
   utterance.onend = () => {
+    clearInterval(keepAliveTimer);
     if (!isStopped) {
       isReading = false;
       spokenCharCount = text.length;
@@ -924,10 +896,51 @@ function startWebSpeechStream(text) {
     }
   };
 
+  utterance.onerror = (e) => {
+    clearInterval(keepAliveTimer);
+    isReading = false;
+  };
+
+  currentUtterance = utterance;
+
   if (soundEnabled) {
     window.speechSynthesis.speak(utterance);
   }
 }
+
+// ローカルVOICEVOX直接連携（オプション）
+async function playLocalVoicevox(text) {
+  const queryRes = await fetch(`http://127.0.0.1:50021/audio_query?text=${encodeURIComponent(text)}&speaker=2`, { method: 'POST' });
+  const queryJson = await queryRes.json();
+  const synthRes = await fetch(`http://127.0.0.1:50021/synthesis?speaker=2`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(queryJson)
+  });
+  const blob = await synthRes.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  currentAudio = new Audio(blobUrl);
+
+  currentAudio.addEventListener('loadedmetadata', () => {
+    if (isStopped || !isReading) return;
+    const msPerChar = Math.max(30, Math.round((currentAudio.duration * 1000) / text.length));
+    clearInterval(charTimer);
+    charTimer = setInterval(() => {
+      if (isStopped || !isReading) {
+        clearInterval(charTimer);
+        return;
+      }
+      if (spokenCharCount < text.length) {
+        spokenCharCount++;
+        renderSpokenText();
+      } else {
+        clearInterval(charTimer);
+      }
+    }, msPerChar);
+    currentAudio.play();
+  });
+}
+
 
 function fallbackTextOnly(text) {
   const msPerChar = Math.round(240 / speechRate);
@@ -957,6 +970,7 @@ function renderSpokenText() {
 // 読み上げ停止ヘルパー
 function stopCurrentSpeech() {
   window.speechSynthesis.cancel();
+  clearInterval(keepAliveTimer);
   if (currentAudio) {
     try {
       currentAudio.pause();
