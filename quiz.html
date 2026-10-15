@@ -551,55 +551,74 @@
 
   <!-- メインプレイヤーカード -->
   <div class="quiz-player-card" id="quizCard" style="display:none;">
-    <div class="track-meta">
-      <div class="meta-left">
-        <div class="live-badge">
-          <span class="live-dot"></span>
-          <span>ON AIR</span>
-        </div>
-        <div class="q-index-text">
-          <span id="questionNumText">第 1 問</span>
-          <span class="q-total-text" id="totalCountText">/ 950問</span>
-        </div>
-      </div>
-      <div class="meta-right">
-        <span class="speaker-tag" id="currentSpeakerTag">🌸 四国めたん</span>
-        <div class="meta-source" id="sourceText">マンオブサイヤー</div>
-      </div>
-    </div>
-
-    <!-- 歌詞スタイル 問題文スクリーン -->
-    <div class="lyrics-screen">
-      <div class="lyrics-text">
-        <span id="spokenText"></span><span class="cursor-caret" id="textCursor"></span>
-      </div>
-    </div>
-
-    <!-- 巨大早押しボタン -->
-    <div class="buzzer-station">
-      <button class="big-buzzer-btn" id="btnBuzzer">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
-        <span>PUSH !!（押す）</span>
+    <!-- スタート画面 (自動再生ポリシー解除用) -->
+    <div id="startScreen" style="text-align: center; padding: 20px 10px;">
+      <div style="font-size: 48px; margin-bottom: 12px;">🌲 🎙️</div>
+      <h2 style="font-size: 26px; font-weight: 900; margin-bottom: 10px; letter-spacing: -0.01em;">クイズの杜 早押しクイズ</h2>
+      <p style="font-size: 15px; color: var(--text-secondary); max-width: 480px; margin: 0 auto 28px; line-height: 1.6;">
+        「クイズの杜」950問の過去問アーカイブを収録！<br>
+        ボタンを押すと、四国めたん（VOICEVOX）の音声読み上げが始まります。
+      </p>
+      <button class="action-btn btn-brand" id="btnStartGame" style="max-width: 340px; margin: 0 auto; padding: 20px 36px; font-size: 20px;">
+        ▶️ クイズをはじめる
       </button>
-      <div class="shortcut-pill">
-        <kbd>Space</kbd> キー または ボタンタップでストップ
+      <div style="margin-top: 14px; font-size: 13px; color: var(--text-sub);">
+        ※ブラウザの音声再生権限を有効化するため、最初の1回だけボタンを押してください
       </div>
     </div>
 
-    <!-- 正解表示パネル -->
-    <div class="answer-card" id="answerPanel">
-      <div class="answer-header">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-        <span>正解</span>
+    <!-- プレイ中画面 -->
+    <div id="playScreen" style="display:none; flex-direction:column; gap:26px;">
+      <div class="track-meta">
+        <div class="meta-left">
+          <div class="live-badge">
+            <span class="live-dot"></span>
+            <span>ON AIR</span>
+          </div>
+          <div class="q-index-text">
+            <span id="questionNumText">第 1 問</span>
+            <span class="q-total-text" id="totalCountText">/ 950問</span>
+          </div>
+        </div>
+        <div class="meta-right">
+          <span class="speaker-tag" id="currentSpeakerTag">🌸 四国めたん</span>
+          <div class="meta-source" id="sourceText">マンオブサイヤー</div>
+        </div>
       </div>
-      <div class="answer-text" id="answerText">正解テキスト</div>
-      <div class="answer-desc" id="descText" style="display:none;"></div>
-    </div>
 
-    <!-- アクションボタン -->
-    <div class="action-deck">
-      <button class="action-btn btn-ghost" id="btnReveal">答えを見る</button>
-      <button class="action-btn btn-brand" id="btnNext">次の問題へ (Enter) →</button>
+      <!-- 歌詞スタイル 問題文スクリーン -->
+      <div class="lyrics-screen">
+        <div class="lyrics-text">
+          <span id="spokenText"></span><span class="cursor-caret" id="textCursor"></span>
+        </div>
+      </div>
+
+      <!-- 巨大早押しボタン -->
+      <div class="buzzer-station">
+        <button class="big-buzzer-btn" id="btnBuzzer">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+          <span>PUSH !!（押す）</span>
+        </button>
+        <div class="shortcut-pill">
+          <kbd>Space</kbd> キー または ボタンタップでストップ
+        </div>
+      </div>
+
+      <!-- 正解表示パネル -->
+      <div class="answer-card" id="answerPanel">
+        <div class="answer-header">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          <span>正解</span>
+        </div>
+        <div class="answer-text" id="answerText">正解テキスト</div>
+        <div class="answer-desc" id="descText" style="display:none;"></div>
+      </div>
+
+      <!-- アクションボタン -->
+      <div class="action-deck">
+        <button class="action-btn btn-ghost" id="btnReveal">答えを見る</button>
+        <button class="action-btn btn-brand" id="btnNext">次の問題へ (Enter) →</button>
+      </div>
     </div>
   </div>
 </div>
@@ -722,10 +741,23 @@ async function loadQuizData() {
   }
 }
 
+let isGameStarted = false;
+
 function initQuizView() {
   document.getElementById('loadingCard').style.display = 'none';
   document.getElementById('quizCard').style.display = 'flex';
+  document.getElementById('startScreen').style.display = 'block';
+  document.getElementById('playScreen').style.display = 'none';
   document.getElementById('totalCountText').innerText = `/ ${questions.length}問`;
+}
+
+// ユーザーのアクションでゲーム開始（ブラウザの自動再生ポリシーをアンロック）
+function startGame() {
+  if (isGameStarted) return;
+  isGameStarted = true;
+  initAudio();
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('playScreen').style.display = 'flex';
   startQuestion(0);
 }
 
@@ -770,7 +802,6 @@ async function playQuestionVoice(text) {
   // VOICEVOX の話者IDが指定されている場合
   if (speaker.id !== null && soundEnabled) {
     try {
-      // 読み上げ開始プレースホルダー（文字送り準備）
       startVoicevoxStream(text, speaker.id);
       return;
     } catch (e) {
@@ -784,7 +815,6 @@ async function playQuestionVoice(text) {
 
 // VOICEVOX (TTS.quest API) での再生と文字送り同期
 async function startVoicevoxStream(text, speakerId) {
-  // TTS.quest API エンドポイント
   const apiUrl = `https://api.tts.quest/v3/voicevox/synthesis?speaker=${speakerId}&text=${encodeURIComponent(text)}`;
 
   try {
@@ -800,7 +830,6 @@ async function startVoicevoxStream(text, speakerId) {
     currentAudio.addEventListener('loadedmetadata', () => {
       if (isStopped || !isReading) return;
       const durationSec = currentAudio.duration;
-      // 音声の長さに合わせて文字送りタイマーを同期
       const totalChars = text.length;
       const msPerChar = Math.max(30, Math.round((durationSec * 1000) / totalChars));
 
@@ -819,7 +848,15 @@ async function startVoicevoxStream(text, speakerId) {
         }
       }, msPerChar);
 
-      currentAudio.play();
+      // Autoplay policy に配慮した安全な再生呼び出し
+      const playPromise = currentAudio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          console.warn('Playback prevented by browser autoplay policy:', err);
+          // 万が一ブロックされた場合は Web Speech API へフォールバック
+          startWebSpeechStream(text);
+        });
+      }
     });
 
     currentAudio.addEventListener('ended', () => {
@@ -986,6 +1023,12 @@ function nextQuestion() {
 }
 
 function setupControls() {
+  // スタートボタン
+  const btnStart = document.getElementById('btnStartGame');
+  if (btnStart) {
+    btnStart.addEventListener('click', startGame);
+  }
+
   const btnBuzzer = document.getElementById('btnBuzzer');
   btnBuzzer.addEventListener('click', handleBuzzer);
   btnBuzzer.addEventListener('touchstart', (e) => {
@@ -1002,7 +1045,7 @@ function setupControls() {
     selectedSpeakerKey = e.target.value;
     localStorage.setItem('quiz_speaker', selectedSpeakerKey);
     // 現在の問題を新しい声でリスタート
-    if (!isStopped) {
+    if (isGameStarted && !isStopped) {
       startQuestion(currentIndex);
     }
   });
@@ -1043,6 +1086,15 @@ function setupControls() {
 
 function setupKeyEvents() {
   window.addEventListener('keydown', (e) => {
+    // ゲーム未開始時、SpaceまたはEnterでゲーム開始
+    if (!isGameStarted) {
+      if (e.code === 'Space' || e.key === 'Enter') {
+        e.preventDefault();
+        startGame();
+      }
+      return;
+    }
+
     if (e.code === 'Space') {
       e.preventDefault();
       if (!isStopped) {
