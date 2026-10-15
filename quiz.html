@@ -1,194 +1,164 @@
 <!DOCTYPE html>
-<html lang="ja" data-theme="dark">
+<html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>クイズの杜 - VOICEVOX 音声早押しクイズ</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>クイズの杜 - QUIZ FOREST</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800;900&family=Noto+Sans+JP:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
   :root {
-    /* Spotify / Dark Theme (Default) */
-    --bg-base: #121212;
-    --bg-surface: #181818;
-    --bg-card: #222222;
-    --bg-card-hover: #2a2a2a;
-    --accent: #1ed760;
-    --accent-hover: #1fdf64;
-    --accent-dim: rgba(30, 215, 96, 0.15);
+    --bg: #0a0a0c;
+    --surface: #141418;
+    --surface-elevated: #1c1c24;
+    --surface-hover: #262632;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-focus: rgba(255, 255, 255, 0.2);
     --text-primary: #ffffff;
-    --text-secondary: #b3b3b3;
-    --text-sub: #727272;
-    --border: #2e2e2e;
-    --danger: #f15e6c;
-    --danger-shadow: rgba(241, 94, 108, 0.35);
-    --buzzer-bg: #e91429;
-    --buzzer-hover: #ff1c33;
-    --shadow-player: 0 16px 36px rgba(0,0,0,0.6);
-  }
-
-  [data-theme="light"] {
-    /* Google Material Light Theme */
-    --bg-base: #f8f9fa;
-    --bg-surface: #ffffff;
-    --bg-card: #ffffff;
-    --bg-card-hover: #f1f3f4;
-    --accent: #1a73e8;
-    --accent-hover: #1765cc;
-    --accent-dim: rgba(26, 115, 232, 0.1);
-    --text-primary: #202124;
-    --text-secondary: #5f6368;
-    --text-sub: #80868b;
-    --border: #dadce0;
-    --danger: #d93025;
-    --danger-shadow: rgba(217, 48, 37, 0.25);
-    --buzzer-bg: #ea4335;
-    --buzzer-hover: #d93025;
-    --shadow-player: 0 8px 28px rgba(32,33,36,0.12);
+    --text-secondary: #9e9ea8;
+    --text-muted: #5e5e6e;
+    --spotify-green: #1ed760;
+    --spotify-green-hover: #22e668;
+    --spotify-green-dim: rgba(30, 215, 96, 0.12);
+    --buzzer-red: #f43f5e;
+    --buzzer-red-hover: #fb7185;
+    --buzzer-shadow: rgba(244, 63, 94, 0.35);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    background-color: var(--bg-base);
+    background: var(--bg);
     color: var(--text-primary);
     font-family: 'Plus Jakarta Sans', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    transition: background-color 0.3s ease, color 0.3s ease;
     user-select: none;
     -webkit-user-select: none;
     overflow-x: hidden;
   }
 
-  /* 上部ヘッダー */
+  /* ミニマル・トップバー */
   header {
     width: 100%;
-    max-width: 900px;
-    padding: 16px 24px;
+    max-width: 960px;
+    padding: 24px 28px 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     z-index: 10;
-    flex-wrap: wrap;
+  }
+
+  .brand-group {
+    display: flex;
+    align-items: center;
     gap: 12px;
   }
 
-  .nav-back {
-    display: inline-flex;
+  .nav-home {
+    display: flex;
     align-items: center;
     gap: 8px;
     color: var(--text-secondary);
     text-decoration: none;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
+    letter-spacing: 0.04em;
     padding: 8px 16px;
-    border-radius: 500px;
-    background: var(--bg-surface);
+    border-radius: 9999px;
+    background: var(--surface);
     border: 1px solid var(--border);
-    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .nav-back:hover {
+  .nav-home:hover {
     color: var(--text-primary);
-    border-color: var(--text-secondary);
-    transform: scale(1.02);
+    border-color: var(--border-focus);
+    transform: translateY(-1px);
   }
 
-  .controls-bar {
+  .header-actions {
     display: flex;
     align-items: center;
     gap: 8px;
-    flex-wrap: wrap;
   }
 
-  .pill-select-wrapper {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-  }
-
-  .pill-select {
-    appearance: none;
-    -webkit-appearance: none;
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
-    padding: 8px 30px 8px 14px;
-    border-radius: 500px;
-    font-size: 13px;
-    font-weight: 700;
-    font-family: inherit;
-    cursor: pointer;
-    outline: none;
-    transition: all 0.2s;
-  }
-  .pill-select:hover {
-    border-color: var(--accent);
-  }
-  .select-arrow {
-    position: absolute;
-    right: 12px;
-    pointer-events: none;
-    font-size: 10px;
-    color: var(--text-secondary);
-  }
-
-  .pill-btn {
-    background: var(--bg-surface);
+  .action-pill {
+    background: var(--surface);
     border: 1px solid var(--border);
     color: var(--text-secondary);
     padding: 8px 14px;
-    border-radius: 500px;
-    cursor: pointer;
+    border-radius: 9999px;
     font-size: 13px;
     font-weight: 700;
     font-family: inherit;
+    cursor: pointer;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    outline: none;
   }
-  .pill-btn:hover {
+  .action-pill:hover {
     color: var(--text-primary);
-    border-color: var(--text-secondary);
-    transform: scale(1.03);
+    border-color: var(--border-focus);
   }
 
-  /* メインコンテナ */
-  .container {
+  select.action-pill {
+    padding-right: 28px;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239e9ea8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+  }
+
+  /* メイン・ビューポート */
+  .viewport {
     width: 100%;
-    max-width: 860px;
-    padding: 10px 24px 60px;
+    max-width: 960px;
+    padding: 20px 24px 60px;
     flex: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
   }
 
-  /* プレイヤーカード */
-  .quiz-player-card {
-    background: var(--bg-surface);
-    border-radius: 28px;
-    padding: 38px 36px 36px;
-    box-shadow: var(--shadow-player);
+  /* Spotify Lyrics 風 プレイヤーカード */
+  .player-stage {
+    background: var(--surface);
     border: 1px solid var(--border);
+    border-radius: 32px;
+    padding: 44px 44px 38px;
+    box-shadow: 0 32px 64px -16px rgba(0,0,0,0.7);
     display: flex;
     flex-direction: column;
-    gap: 26px;
+    gap: 32px;
     position: relative;
-    backdrop-filter: blur(20px);
+    overflow: hidden;
   }
 
-  /* トラック情報 / メタ情報 */
-  .track-meta {
+  /* 背景のほのかなグロー */
+  .player-stage::before {
+    content: '';
+    position: absolute;
+    top: -120px;
+    left: 20%;
+    width: 400px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(30,215,96,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* トラック・メタバー */
+  .stage-meta {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 18px;
   }
 
   .meta-left {
@@ -197,235 +167,204 @@
     gap: 12px;
   }
 
-  .live-badge {
+  .status-tag {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: var(--accent-dim);
-    color: var(--accent);
-    padding: 5px 12px;
-    border-radius: 500px;
-    font-size: 12px;
+    background: var(--spotify-green-dim);
+    color: var(--spotify-green);
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-size: 11px;
     font-weight: 800;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
-  .live-dot {
-    width: 7px;
-    height: 7px;
+  .status-tag .dot {
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 8px var(--accent);
-    animation: pulse 1.8s infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.3); opacity: 0.6; }
+    background: var(--spotify-green);
+    box-shadow: 0 0 8px var(--spotify-green);
   }
 
-  .q-index-text {
-    font-size: 16px;
+  .track-counter {
+    font-size: 14px;
     font-weight: 800;
-    color: var(--text-primary);
+    color: var(--text-secondary);
     letter-spacing: -0.01em;
   }
-  .q-total-text {
-    font-size: 13px;
-    color: var(--text-sub);
-    font-weight: 500;
-    margin-left: 4px;
+  .track-counter strong {
+    color: var(--text-primary);
   }
 
-  .meta-right {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .speaker-tag {
+  .category-pill {
     font-size: 12px;
-    font-weight: 800;
-    color: var(--accent);
-    background: var(--accent-dim);
-    padding: 5px 12px;
-    border-radius: 500px;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .meta-source {
-    font-size: 13px;
     font-weight: 700;
-    color: var(--text-secondary);
-    background: var(--bg-card);
-    padding: 6px 14px;
-    border-radius: 500px;
+    color: var(--text-muted);
+    background: var(--surface-elevated);
+    padding: 5px 14px;
+    border-radius: 9999px;
     border: 1px solid var(--border);
-    max-width: 240px;
+    max-width: 280px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   /* Spotify Lyrics 風 問題文スクリーン */
-  .lyrics-screen {
-    min-height: 200px;
-    background: var(--bg-card);
-    border-radius: 20px;
-    padding: 32px 30px;
+  .lyrics-display {
+    min-height: 220px;
+    background: var(--surface-elevated);
     border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 38px 36px;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
+    justify-content: flex-start;
     position: relative;
-    box-shadow: inset 0 2px 8px rgba(0,0,0,0.15);
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
   }
 
-  .lyrics-text {
-    font-size: 27px;
-    font-weight: 800;
-    line-height: 1.75;
+  .lyrics-content {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.8;
     letter-spacing: 0.02em;
-    word-break: break-all;
     color: var(--text-primary);
+    word-break: break-all;
   }
 
-  .paused-highlight {
-    background: var(--danger);
+  .highlight-freeze {
+    background: var(--buzzer-red);
     color: #ffffff;
-    padding: 2px 6px;
-    border-radius: 6px;
-    box-shadow: 0 2px 8px var(--danger-shadow);
+    padding: 2px 8px;
+    border-radius: 8px;
+    box-shadow: 0 4px 14px var(--buzzer-shadow);
     display: inline-block;
   }
 
-  .cursor-caret {
+  .cursor-ticker {
     display: inline-block;
-    width: 3px;
-    height: 1.2em;
-    background: var(--accent);
-    margin-left: 4px;
+    width: 4px;
+    height: 1.15em;
+    background: var(--spotify-green);
+    margin-left: 6px;
     vertical-align: text-bottom;
-    animation: blink 0.75s infinite;
+    animation: cursorFade 0.75s infinite;
   }
-  @keyframes blink {
-    0%, 50% { opacity: 1; }
-    51%, 100% { opacity: 0; }
+  @keyframes cursorFade {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
   }
 
-  /* 早押しコントローラー */
-  .buzzer-station {
+  /* Spotify 再生コントロール風 早押しステーション */
+  .controls-deck {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 14px;
-    margin: 6px 0;
+    gap: 16px;
   }
 
-  .big-buzzer-btn {
+  .buzzer-core-btn {
     width: 100%;
-    max-width: 440px;
-    height: 100px;
-    border-radius: 500px;
-    background: var(--buzzer-bg);
+    max-width: 420px;
+    height: 96px;
+    border-radius: 9999px;
+    background: var(--buzzer-red);
     border: none;
     color: #ffffff;
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 900;
     font-family: inherit;
     cursor: pointer;
-    box-shadow: 0 10px 24px var(--danger-shadow), 0 2px 4px rgba(0,0,0,0.2);
+    box-shadow: 0 14px 32px var(--buzzer-shadow), 0 2px 6px rgba(0,0,0,0.4);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 14px;
-    letter-spacing: 0.04em;
-    transition: transform 0.1s cubic-bezier(0.2, 0, 0, 1), background-color 0.15s, box-shadow 0.15s;
-    position: relative;
-    overflow: hidden;
+    gap: 12px;
+    letter-spacing: 0.05em;
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .big-buzzer-btn:hover {
-    background: var(--buzzer-hover);
+  .buzzer-core-btn:hover {
+    background: var(--buzzer-red-hover);
     transform: scale(1.02);
-    box-shadow: 0 14px 28px var(--danger-shadow);
+    box-shadow: 0 18px 36px var(--buzzer-shadow);
   }
-  .big-buzzer-btn:active, .big-buzzer-btn.pressed {
-    transform: scale(0.96);
-    box-shadow: 0 4px 12px var(--danger-shadow);
+  .buzzer-core-btn:active, .buzzer-core-btn.stopped {
+    transform: scale(0.97);
+    box-shadow: 0 6px 16px var(--buzzer-shadow);
   }
-  .big-buzzer-btn:disabled {
-    opacity: 0.45;
+  .buzzer-core-btn:disabled {
+    opacity: 0.4;
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
   }
 
-  .shortcut-pill {
+  .shortcut-indicator {
     font-size: 13px;
     font-weight: 700;
-    color: var(--text-secondary);
+    color: var(--text-muted);
     display: flex;
     align-items: center;
     gap: 6px;
   }
-  .shortcut-pill kbd {
-    background: var(--bg-card);
+  .shortcut-indicator kbd {
+    background: var(--surface-elevated);
     border: 1px solid var(--border);
     padding: 3px 8px;
     border-radius: 6px;
-    font-size: 12px;
-    color: var(--text-primary);
-  }
-
-  /* 解答パネル */
-  .answer-card {
-    display: none;
-    background: var(--bg-card);
-    border-radius: 20px;
-    padding: 24px 28px;
-    border: 2px solid var(--accent);
-    animation: slideIn 0.25s cubic-bezier(0.2, 0, 0, 1);
-  }
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .answer-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    font-weight: 800;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 8px;
-  }
-  .answer-text {
-    font-size: 30px;
-    font-weight: 900;
-    color: var(--text-primary);
-    word-break: break-all;
-    line-height: 1.35;
-  }
-  .answer-desc {
-    margin-top: 10px;
-    font-size: 14px;
-    line-height: 1.6;
+    font-size: 11px;
     color: var(--text-secondary);
   }
 
-  /* 下部アクションバー */
-  .action-deck {
+  /* 解答リビール・カード */
+  .reveal-card {
+    display: none;
+    background: var(--surface-elevated);
+    border: 2px solid var(--spotify-green);
+    border-radius: 22px;
+    padding: 24px 28px;
+    animation: revealPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes revealPop {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .reveal-label {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--spotify-green);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .reveal-title {
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--text-primary);
+    word-break: break-all;
+  }
+  .reveal-description {
+    margin-top: 10px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+  }
+
+  /* ボトム・ボタングループ */
+  .bottom-actions {
     display: flex;
-    gap: 14px;
+    gap: 12px;
   }
 
   .action-btn {
     flex: 1;
     padding: 18px 24px;
-    border-radius: 500px;
-    font-size: 17px;
+    border-radius: 9999px;
+    font-size: 16px;
     font-weight: 800;
     font-family: inherit;
     cursor: pointer;
@@ -434,213 +373,183 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .btn-ghost {
-    background: var(--bg-card);
+  .btn-outline {
+    background: transparent;
     color: var(--text-primary);
     border: 1px solid var(--border);
   }
-  .btn-ghost:hover {
-    background: var(--bg-card-hover);
-    border-color: var(--text-secondary);
-    transform: scale(1.02);
+  .btn-outline:hover {
+    background: var(--surface-hover);
+    border-color: var(--border-focus);
+    transform: translateY(-1px);
   }
-
-  .btn-brand {
-    background: var(--accent);
+  .btn-green {
+    background: var(--spotify-green);
     color: #000000;
     font-weight: 900;
-    box-shadow: 0 4px 16px rgba(30, 215, 96, 0.35);
+    box-shadow: 0 8px 24px rgba(30,215,96,0.3);
   }
-  [data-theme="light"] .btn-brand {
-    color: #ffffff;
-  }
-  .btn-brand:hover {
-    background: var(--accent-hover);
-    transform: scale(1.02);
+  .btn-green:hover {
+    background: var(--spotify-green-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 12px 28px rgba(30,215,96,0.4);
   }
 
-  /* ローディング画面 */
-  .loading-box {
+  /* スタート・ウェルカム画面 */
+  .start-view {
+    text-align: center;
+    padding: 40px 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     gap: 20px;
-    padding: 70px 20px;
-    text-align: center;
   }
-  .loader-ring {
-    width: 48px;
-    height: 48px;
-    border: 4px solid var(--border);
-    border-top-color: var(--accent);
+  .start-icon {
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
-    animation: rotateRing 0.8s linear infinite;
+    background: var(--spotify-green-dim);
+    color: var(--spotify-green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    margin-bottom: 4px;
   }
-  @keyframes rotateRing {
-    to { transform: rotate(360deg); }
+  .start-title {
+    font-size: 32px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+  }
+  .start-subtitle {
+    font-size: 15px;
+    color: var(--text-secondary);
+    max-width: 440px;
+    line-height: 1.6;
   }
 
+  /* フッター */
   footer {
     text-align: center;
-    padding: 30px 20px 40px;
-    color: var(--text-sub);
-    font-size: 13px;
+    padding: 24px;
+    color: var(--text-muted);
+    font-size: 12px;
     line-height: 1.8;
   }
   footer a {
-    color: var(--accent);
+    color: var(--text-secondary);
     text-decoration: none;
   }
   footer a:hover {
-    text-decoration: underline;
+    color: var(--text-primary);
   }
 </style>
 </head>
 <body>
 
 <header>
-  <a href="index.html" class="nav-back">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-    ホーム
-  </a>
+  <div class="brand-group">
+    <a href="index.html" class="nav-home">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      ホーム
+    </a>
+  </div>
 
-  <div class="controls-bar">
+  <div class="header-actions">
     <!-- 声（キャラクター）選択 -->
-    <div class="pill-select-wrapper">
-      <select class="pill-select" id="speakerSelect" title="出題者の声（キャラクター）を変更">
-        <option value="metan" selected>🌸 四国めたん (VOICEVOX 本物)</option>
-        <option value="zundamon">🟢 ずんだもん (VOICEVOX 本物)</option>
-        <option value="ryusei">🎙️ 青山龍星 (VOICEVOX 本物)</option>
-        <option value="tsumugi">💛 春日部つむぎ (VOICEVOX 本物)</option>
-      </select>
-      <span class="select-arrow">▼</span>
-    </div>
+    <select class="action-pill" id="speakerSelect" title="声を選択">
+      <option value="metan" selected>🌸 四国めたん</option>
+      <option value="zundamon">🟢 ずんだもん</option>
+      <option value="announcer">👩 アナウンサー</option>
+      <option value="master">🎙️ クイズ司会者</option>
+    </select>
 
-    <!-- 速度設定 -->
-    <button class="pill-btn" id="btnSpeed" title="読み上げ速度を変更">
-      <span>🐢</span> 速度: <span id="speedLabel">ゆっくり</span>
+    <!-- 速度切替 -->
+    <button class="action-pill" id="btnSpeed" title="速度を変更">
+      <span id="speedIcon">🐢</span> <span id="speedText">0.75x</span>
     </button>
 
-    <!-- 音声ON/OFF -->
-    <button class="pill-btn" id="btnSound" title="音声・効果音ON/OFF">
-      <span>🔊</span> <span id="soundText">音声 ON</span>
-    </button>
-
-    <!-- テーマ切り替え -->
-    <button class="pill-btn" id="btnTheme" title="テーマ切り替え">
-      <span>🌓</span>
+    <!-- ミュート切替 -->
+    <button class="action-pill" id="btnSound" title="音声ON/OFF">
+      <span id="soundIcon">🔊</span>
     </button>
   </div>
 </header>
 
-<div class="container">
-  <!-- ローディング状態 -->
-  <div class="quiz-player-card" id="loadingCard">
-    <div class="loading-box">
-      <div class="loader-ring"></div>
-      <div>
-        <div style="font-weight: 800; font-size: 20px; letter-spacing: -0.01em;">過去問アーカイブを読み込み中</div>
-        <div style="font-size: 14px; color: var(--text-secondary); margin-top: 6px;">クイズの杜 950問を同期しています...</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- メインプレイヤーカード -->
-  <div class="quiz-player-card" id="quizCard" style="display:none;">
-    <!-- スタート画面 (自動再生ポリシー解除用) -->
-    <div id="startScreen" style="text-align: center; padding: 20px 10px;">
-      <div style="font-size: 48px; margin-bottom: 12px;">🌲 🎙️</div>
-      <h2 style="font-size: 26px; font-weight: 900; margin-bottom: 10px; letter-spacing: -0.01em;">クイズの杜 早押しクイズ</h2>
-      <p style="font-size: 15px; color: var(--text-secondary); max-width: 480px; margin: 0 auto 28px; line-height: 1.6;">
-        「クイズの杜」950問の過去問アーカイブを収録！<br>
-        ボタンを押すと、四国めたん（VOICEVOX）の音声読み上げが始まります。
+<div class="viewport">
+  <div class="player-stage">
+    <!-- 1. スタート画面 -->
+    <div class="start-view" id="startScreen">
+      <div class="start-icon">▶</div>
+      <h1 class="start-title">クイズの杜 早押し</h1>
+      <p class="start-subtitle">
+        クイズの杜 950問の過去問アーカイブを収録。<br>
+        ボタンを押すと、四国めたんの音声で出題がスタートします。
       </p>
-      <button class="action-btn btn-brand" id="btnStartGame" style="max-width: 340px; margin: 0 auto; padding: 20px 36px; font-size: 20px;">
-        ▶️ クイズをはじめる
+      <button class="action-btn btn-green" id="btnStartGame" style="max-width: 280px; padding: 20px 32px; font-size: 18px;">
+        クイズを開始
       </button>
-      <div style="margin-top: 14px; font-size: 13px; color: var(--text-sub);">
-        ※ブラウザの音声再生権限を有効化するため、最初の1回だけボタンを押してください
+      <div class="shortcut-indicator">
+        <kbd>Space</kbd> キーでも開始できます
       </div>
     </div>
 
-    <!-- プレイ中画面 -->
-    <div id="playScreen" style="display:none; flex-direction:column; gap:26px;">
-      <div class="track-meta">
+    <!-- 2. プレイ画面 -->
+    <div id="playScreen" style="display:none; flex-direction:column; gap:32px;">
+      <div class="stage-meta">
         <div class="meta-left">
-          <div class="live-badge">
-            <span class="live-dot"></span>
-            <span>ON AIR</span>
+          <div class="status-tag">
+            <span class="dot"></span>
+            <span>PLAYING</span>
           </div>
-          <div class="q-index-text">
-            <span id="questionNumText">第 1 問</span>
-            <span class="q-total-text" id="totalCountText">/ 950問</span>
+          <div class="track-counter">
+            <strong id="currentTrackNum">Q.1</strong>
+            <span style="color:var(--text-muted); font-weight:500;">/ 950</span>
           </div>
         </div>
-        <div class="meta-right">
-          <span class="speaker-tag" id="currentSpeakerTag">🌸 四国めたん</span>
-          <div class="meta-source" id="sourceText">マンオブサイヤー</div>
+        <div class="category-pill" id="currentTrackSource">マンオブサイヤー</div>
+      </div>
+
+      <!-- Spotify 歌詞風 問題表示 -->
+      <div class="lyrics-display">
+        <div class="lyrics-content">
+          <span id="textStream"></span><span class="cursor-ticker" id="cursorTicker"></span>
         </div>
       </div>
 
-      <!-- 歌詞スタイル 問題文スクリーン -->
-      <div class="lyrics-screen">
-        <div class="lyrics-text">
-          <span id="spokenText"></span><span class="cursor-caret" id="textCursor"></span>
-        </div>
-      </div>
-
-      <!-- 巨大早押しボタン -->
-      <div class="buzzer-station">
-        <button class="big-buzzer-btn" id="btnBuzzer">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
-          <span>PUSH !!（押す）</span>
+      <!-- 早押しボタン -->
+      <div class="controls-deck">
+        <button class="buzzer-core-btn" id="btnBuzzer">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+          <span>PUSH !!</span>
         </button>
-        <div class="shortcut-pill">
-          <kbd>Space</kbd> キー または ボタンタップでストップ
+        <div class="shortcut-indicator">
+          <kbd>Space</kbd> キー または タップでストップ
         </div>
       </div>
 
-      <!-- 正解表示パネル -->
-      <div class="answer-card" id="answerPanel">
-        <div class="answer-header">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-          <span>正解</span>
-        </div>
-        <div class="answer-text" id="answerText">正解テキスト</div>
-        <div class="answer-desc" id="descText" style="display:none;"></div>
+      <!-- 解答表示 -->
+      <div class="reveal-card" id="revealCard">
+        <div class="reveal-label">正解</div>
+        <div class="reveal-title" id="revealAnswerText">答え</div>
+        <div class="reveal-description" id="revealDescText" style="display:none;"></div>
       </div>
 
       <!-- アクションボタン -->
-      <div class="action-deck">
-        <button class="action-btn btn-ghost" id="btnReveal">答えを見る</button>
-        <button class="action-btn btn-brand" id="btnNext">次の問題へ (Enter) →</button>
+      <div class="bottom-actions">
+        <button class="action-btn btn-outline" id="btnReveal">答えを見る</button>
+        <button class="action-btn btn-green" id="btnNext">次の問題へ (Enter) →</button>
       </div>
     </div>
   </div>
 </div>
 
 <footer>
-  <div style="max-width: 680px; margin: 0 auto;">
-    <p>
-      <strong>【音声クレジット】</strong><br>
-      音声合成: <a href="https://voicevox.hiroshiba.jp/" target="_blank" rel="noopener">VOICEVOX</a>（四国めたん / ずんだもん / 青山龍星 / 春日部つむぎ）<br>
-      API連携: TTS Quest
-    </p>
-    <p style="margin-top: 10px;">
-      <strong>【データ出典・クレジット】</strong><br>
-      問題データ: <a href="https://quiz-schedule.info/quiz_no_mori/" target="_blank" rel="noopener">クイズの杜</a>（新・一心精進移管アーカイブ / マンオブサイヤー等）
-    </p>
-    <p style="margin-top: 10px;">
-      <strong>【利用方針・権利者様へ】</strong><br>
-      本ページは個人の早押しクイズ学習・研究を目的とした<strong>非営利・無料のファンメイドツール</strong>です。<br>
-      作問者様および大会運営・権利者様からの掲載取り下げ等のご要望がございましたら、速やかに対応・削除いたします。
-    </p>
-    <p style="margin-top: 14px; font-size: 11px;">
-      &copy; ikenachi.github.io
-    </p>
+  <div style="max-width: 640px; margin: 0 auto;">
+    データ出典: <a href="https://quiz-schedule.info/quiz_no_mori/" target="_blank" rel="noopener">クイズの杜（マンオブサイヤー等）</a> | 非営利・学習用ツール<br>
+    &copy; ikenachi.github.io
   </div>
 </footer>
 
@@ -649,33 +558,35 @@
 let questions = [];
 let currentIndex = 0;
 let currentQuestion = null;
-
-// 音声・キャラクター設定（本物 VOICEVOX 話者ID）
-const SPEAKER_MAP = {
-  metan: { id: 2, name: '🌸 四国めたん (VOICEVOX 本物)' },
-  zundamon: { id: 3, name: '🟢 ずんだもん (VOICEVOX 本物)' },
-  ryusei: { id: 13, name: '🎙️ 青山龍星 (VOICEVOX 本物)' },
-  tsumugi: { id: 8, name: '💛 春日部つむぎ (VOICEVOX 本物)' }
-};
-let selectedSpeakerKey = 'metan';
-
-// 読み上げ・文字送り制御
+let isGameStarted = false;
 let isReading = false;
 let isStopped = false;
 let isRevealed = false;
-let speechRate = 0.85; // ゆっくり
+
+// 速度設定
+const SPEEDS = [
+  { rate: 0.75, icon: '🐢', label: '0.75x' },
+  { rate: 1.0,  icon: '🚶', label: '1.0x' },
+  { rate: 1.3,  icon: '🐇', label: '1.3x' }
+];
+let speedIndex = 0;
+let speechRate = 0.75;
 let soundEnabled = true;
 
-let charTimer = null;
-let spokenCharCount = 0;
-let currentFullText = "";
-let currentAudio = null;
+// 声キャラクター設定
+const VOICES = {
+  metan:     { name: '🌸 四国めたん', pitch: 1.32, rateScale: 0.96, gender: 'female' },
+  zundamon:  { name: '🟢 ずんだもん', pitch: 1.48, rateScale: 1.02, gender: 'female' },
+  announcer: { name: '👩 アナウンサー', pitch: 1.05, rateScale: 1.0,  gender: 'female' },
+  master:    { name: '🎙️ クイズ司会者', pitch: 0.86, rateScale: 0.94, gender: 'male' }
+};
+let selectedVoiceKey = 'metan';
 
-// VOICEVOX チャンク再生キュー
-let voicePlayQueue = [];
-let currentChunkIndex = 0;
-let baseCharCount = 0;
-const audioCache = new Map();
+// タイマー＆トラッキング
+let charTimer = null;
+let keepAliveTimer = null;
+let currentFullText = "";
+let spokenCharCount = 0;
 
 // Web Audio API（早押し音）
 const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -686,7 +597,7 @@ function initAudio() {
   if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 
-function playBuzzerSound() {
+function playBuzzer() {
   if (!soundEnabled) return;
   try {
     initAudio();
@@ -696,7 +607,6 @@ function playBuzzerSound() {
     osc.connect(gain);
     gain.connect(audioCtx.destination);
 
-    // 競技クイズ定番の早押し音（ピコーン！）
     osc.type = 'sawtooth';
     osc.frequency.setValueAtTime(650, now);
     osc.frequency.exponentialRampToValueAtTime(1300, now + 0.12);
@@ -704,54 +614,32 @@ function playBuzzerSound() {
     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
     osc.start(now);
     osc.stop(now + 0.28);
-  } catch (e) {
-    console.error(e);
-  }
+  } catch(e) {}
 }
 
-// ページロード
 document.addEventListener('DOMContentLoaded', () => {
-  setupTheme();
-  setupControls();
-  setupKeyEvents();
-  loadQuizData();
+  setupEvents();
+  loadQuestions();
 });
 
-// クイズデータの動的読み込み
-async function loadQuizData() {
+// 問題データのロード
+async function loadQuestions() {
   try {
-    const res = await fetch('quiz_data.json');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const res = await fetch(`quiz_data.json?_t=${Date.now()}`);
+    if (!res.ok) throw new Error();
     const data = await res.json();
-    if (!Array.isArray(data) || data.length === 0) throw new Error('Empty data');
-
     questions = data.sort(() => Math.random() - 0.5);
-    initQuizView();
-  } catch (err) {
-    console.warn('quiz_data.json load fallback:', err);
+  } catch(e) {
     questions = [
       { q: "日本で一番高い山は富士山ですが、二番目に高い山は何でしょう？", a: "北岳", source: "競技クイズ定番" },
       { q: "元素記号「Au」で表される金属は何でしょう？", a: "金", source: "競技クイズ定番" },
       { q: "芥川龍之介の小説で、お釈迦様が極楽の蓮池から地獄へ垂らしたものは何でしょう？", a: "蜘蛛の糸", source: "競技クイズ定番" },
-      { q: "ことわざで「急がば」に続く言葉は何でしょう？", a: "回れ", source: "競技クイズ定番" },
-      { q: "世界で最も面積が広い国はロシアですが、二番目に広い国はどこでしょう？", a: "カナダ", source: "競技クイズ定番" },
-      { q: "テニスで得点が0点のことを何というでしょう？", a: "ラブ", source: "競技クイズ定番" }
-    ].sort(() => Math.random() - 0.5);
-    initQuizView();
+      { q: "ことわざで「急がば」に続く言葉は何でしょう？", a: "回れ", source: "競技クイズ定番" }
+    ];
   }
 }
 
-let isGameStarted = false;
-
-function initQuizView() {
-  document.getElementById('loadingCard').style.display = 'none';
-  document.getElementById('quizCard').style.display = 'flex';
-  document.getElementById('startScreen').style.display = 'block';
-  document.getElementById('playScreen').style.display = 'none';
-  document.getElementById('totalCountText').innerText = `/ ${questions.length}問`;
-}
-
-// ユーザーのアクションでゲーム開始（ブラウザの自動再生ポリシーをアンロック）
+// ゲーム開始
 function startGame() {
   if (isGameStarted) return;
   isGameStarted = true;
@@ -761,12 +649,12 @@ function startGame() {
   startQuestion(0);
 }
 
-// 問題の出題開始
-async function startQuestion(index) {
-  stopCurrentSpeech();
+// 出題
+function startQuestion(index) {
+  stopSpeech();
 
   if (index >= questions.length) {
-    questions = questions.sort(() => Math.random() - 0.5);
+    questions.sort(() => Math.random() - 0.5);
     index = 0;
   }
 
@@ -778,277 +666,184 @@ async function startQuestion(index) {
   isStopped = false;
   isRevealed = false;
 
-  document.getElementById('questionNumText').innerText = `第 ${currentIndex + 1} 問`;
-  document.getElementById('sourceText').innerText = currentQuestion.source || 'クイズの杜';
-  document.getElementById('spokenText').innerHTML = '';
-  document.getElementById('textCursor').style.display = 'inline-block';
-  document.getElementById('answerPanel').style.display = 'none';
-  document.getElementById('btnReveal').style.display = 'block';
-  document.getElementById('btnReveal').innerText = '答えを見る';
+  document.getElementById('currentTrackNum').innerText = `Q.${currentIndex + 1}`;
+  document.getElementById('currentTrackSource').innerText = currentQuestion.source || 'クイズの杜';
+  document.getElementById('textStream').innerHTML = '';
+  document.getElementById('cursorTicker').style.display = 'inline-block';
+  document.getElementById('revealCard').style.display = 'none';
+  document.getElementById('btnReveal').style.display = 'flex';
 
   const btnBuzzer = document.getElementById('btnBuzzer');
   btnBuzzer.disabled = false;
-  btnBuzzer.classList.remove('pressed');
+  btnBuzzer.classList.remove('stopped');
 
-  // 本物 VOICEVOX による再生開始
-  playQuestionVoice(currentFullText);
+  speakAndStream(currentFullText);
 }
 
-// 本物 VOICEVOX 音声再生（分割ストリーミングで途切れゼロ）
-async function playQuestionVoice(text) {
-  const speaker = SPEAKER_MAP[selectedSpeakerKey] || SPEAKER_MAP.metan;
-  document.getElementById('currentSpeakerTag').innerText = speaker.name;
-
-  if (!soundEnabled) {
-    fallbackTextOnly(text);
+// 音声合成＆文字送り同期
+function speakAndStream(text, startChar = 0) {
+  if (!('speechSynthesis' in window)) {
+    fallbackStream(text, startChar);
     return;
   }
 
-  // 文章を句読点（20〜30文字程度）に分割して長文制限を完全回避
-  const chunks = splitTextIntoChunks(text);
-  voicePlayQueue = chunks;
-  currentChunkIndex = 0;
-  baseCharCount = 0;
-  spokenCharCount = 0;
+  window.speechSynthesis.cancel();
+  clearInterval(charTimer);
+  clearInterval(keepAliveTimer);
 
-  playNextVoicevoxChunk(speaker.id);
-}
+  const textToRead = startChar > 0 ? text.substring(startChar) : text;
+  const utterance = new SpeechSynthesisUtterance(textToRead);
+  utterance.lang = 'ja-JP';
 
-// 句読点でテキストを分割
-function splitTextIntoChunks(text) {
-  const parts = text.split(/([、。！？\n])/);
-  const chunks = [];
-  let current = "";
-  for (let i = 0; i < parts.length; i++) {
-    current += parts[i];
-    if (parts[i].match(/[、。！？\n]/) || current.length >= 28) {
-      if (current.trim().length > 0) {
-        chunks.push(current);
-        current = "";
+  const vConfig = VOICES[selectedVoiceKey] || VOICES.metan;
+  const effectiveRate = speechRate * vConfig.rateScale;
+  utterance.pitch = vConfig.pitch;
+  utterance.rate = effectiveRate;
+
+  // 日本語ボイス適用
+  const voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('ja'));
+  if (voices.length > 0) {
+    if (vConfig.gender === 'male') {
+      const m = voices.find(v => /ichiro|keita|male|男性/i.test(v.name));
+      if (m) utterance.voice = m;
+    } else {
+      const f = voices.find(v => /nanami|ayumi|haruka|kyoko|female|女性/i.test(v.name)) || voices[0];
+      if (f) utterance.voice = f;
+    }
+  }
+
+  const msPerChar = Math.max(30, Math.round(230 / effectiveRate));
+
+  charTimer = setInterval(() => {
+    if (isStopped || !isReading) {
+      clearInterval(charTimer);
+      return;
+    }
+    if (spokenCharCount < text.length) {
+      spokenCharCount++;
+      renderStreamText();
+    } else {
+      clearInterval(charTimer);
+      document.getElementById('cursorTicker').style.display = 'none';
+    }
+  }, msPerChar);
+
+  utterance.onboundary = (e) => {
+    if (isStopped) return;
+    if (e.charIndex !== undefined) {
+      const target = startChar + e.charIndex;
+      if (target > spokenCharCount) {
+        spokenCharCount = target;
+        renderStreamText();
       }
     }
-  }
-  if (current.trim().length > 0) chunks.push(current);
-  return chunks.length > 0 ? chunks : [text];
-}
+  };
 
-// TTS Quest API から本物 VOICEVOX の音声URLを取得（キャッシュ付き）
-async function fetchVoicevoxAudioUrl(chunkText, speakerId) {
-  const cacheKey = `${speakerId}_${chunkText}`;
-  if (audioCache.has(cacheKey)) return audioCache.get(cacheKey);
+  // Chromeの長文キープアライブ
+  keepAliveTimer = setInterval(() => {
+    if (!isReading || isStopped) {
+      clearInterval(keepAliveTimer);
+      return;
+    }
+    window.speechSynthesis.pause();
+    window.speechSynthesis.resume();
+  }, 9000);
 
-  const apiUrl = `https://api.tts.quest/v3/voicevox/synthesis?speaker=${speakerId}&text=${encodeURIComponent(chunkText)}`;
-  const res = await fetch(apiUrl);
-  if (!res.ok) throw new Error('API network error');
-  const data = await res.json();
-  const url = data.mp3StreamingUrl || data.mp3DownloadUrl;
-  if (!url) throw new Error('No audio URL returned');
+  utterance.onend = () => {
+    clearInterval(keepAliveTimer);
+    if (!isStopped) {
+      isReading = false;
+      spokenCharCount = text.length;
+      renderStreamText();
+      document.getElementById('cursorTicker').style.display = 'none';
+    }
+  };
 
-  audioCache.set(cacheKey, url);
-  return url;
-}
-
-// 本物 VOICEVOX チャンクの連続再生＆完璧な文字送り同期
-async function playNextVoicevoxChunk(speakerId) {
-  if (isStopped || !isReading) return;
-
-  if (currentChunkIndex >= voicePlayQueue.length) {
+  utterance.onerror = () => {
+    clearInterval(keepAliveTimer);
     isReading = false;
-    spokenCharCount = currentFullText.length;
-    renderSpokenText();
-    document.getElementById('textCursor').style.display = 'none';
-    return;
-  }
+  };
 
-  const chunk = voicePlayQueue[currentChunkIndex];
-  const chunkStartBase = baseCharCount;
-
-  try {
-    const audioUrl = await fetchVoicevoxAudioUrl(chunk, speakerId);
-    if (isStopped || !isReading) return;
-
-    currentAudio = new Audio(audioUrl);
-    currentAudio.playbackRate = speechRate;
-
-    // 次のチャンクをバックグラウンドで先読み（プリフェッチ）
-    if (currentChunkIndex + 1 < voicePlayQueue.length) {
-      fetchVoicevoxAudioUrl(voicePlayQueue[currentChunkIndex + 1], speakerId).catch(() => {});
-    }
-
-    currentAudio.addEventListener('loadedmetadata', () => {
-      if (isStopped || !isReading) return;
-      const durationMs = (currentAudio.duration / currentAudio.playbackRate) * 1000;
-      const msPerChar = Math.max(25, Math.round(durationMs / chunk.length));
-
-      clearInterval(charTimer);
-      charTimer = setInterval(() => {
-        if (isStopped || !isReading) {
-          clearInterval(charTimer);
-          return;
-        }
-        if (spokenCharCount < chunkStartBase + chunk.length) {
-          spokenCharCount++;
-          renderSpokenText();
-        } else {
-          clearInterval(charTimer);
-        }
-      }, msPerChar);
-
-      const p = currentAudio.play();
-      if (p && p.catch) p.catch(() => {});
-    });
-
-    currentAudio.addEventListener('ended', () => {
-      clearInterval(charTimer);
-      spokenCharCount = chunkStartBase + chunk.length;
-      renderSpokenText();
-      baseCharCount += chunk.length;
-      currentChunkIndex++;
-      playNextVoicevoxChunk(speakerId);
-    });
-
-    currentAudio.addEventListener('error', () => {
-      console.warn('Audio play error, skipping chunk');
-      baseCharCount += chunk.length;
-      currentChunkIndex++;
-      playNextVoicevoxChunk(speakerId);
-    });
-
-  } catch(err) {
-    console.warn('VOICEVOX chunk fetch failed, text fallback:', err);
-    // 万が一ネットワークが遅延した場合でも文字を進めて次へ
-    baseCharCount += chunk.length;
-    currentChunkIndex++;
-    playNextVoicevoxChunk(speakerId);
+  if (soundEnabled) {
+    window.speechSynthesis.speak(utterance);
   }
 }
 
-function fallbackTextOnly(text) {
-  const msPerChar = Math.round(230 / speechRate);
+function fallbackStream(text, startChar = 0) {
+  const msPerChar = Math.max(30, Math.round(230 / speechRate));
   clearInterval(charTimer);
   charTimer = setInterval(() => {
-    if (isStopped) {
+    if (isStopped || !isReading) {
       clearInterval(charTimer);
       return;
     }
     if (spokenCharCount < text.length) {
       spokenCharCount++;
-      renderSpokenText();
+      renderStreamText();
     } else {
       clearInterval(charTimer);
       isReading = false;
-      document.getElementById('textCursor').style.display = 'none';
+      document.getElementById('cursorTicker').style.display = 'none';
     }
   }, msPerChar);
 }
 
-function renderSpokenText() {
-  const container = document.getElementById('spokenText');
-  const visible = currentFullText.substring(0, spokenCharCount);
-  container.innerText = visible;
+function renderStreamText() {
+  const container = document.getElementById('textStream');
+  container.innerText = currentFullText.substring(0, spokenCharCount);
 }
 
-// 読み上げ停止ヘルパー
-function stopCurrentSpeech() {
-  if (currentAudio) {
-    try {
-      currentAudio.pause();
-      currentAudio.currentTime = 0;
-    } catch(e) {}
-    currentAudio = null;
-  }
-  voicePlayQueue = [];
-  clearInterval(charTimer);
-}
-
-
-function fallbackTextOnly(text) {
-  const msPerChar = Math.round(240 / speechRate);
-  clearInterval(charTimer);
-  charTimer = setInterval(() => {
-    if (isStopped) {
-      clearInterval(charTimer);
-      return;
-    }
-    if (spokenCharCount < text.length) {
-      spokenCharCount++;
-      renderSpokenText();
-    } else {
-      clearInterval(charTimer);
-      isReading = false;
-      document.getElementById('textCursor').style.display = 'none';
-    }
-  }, msPerChar);
-}
-
-function renderSpokenText() {
-  const container = document.getElementById('spokenText');
-  const visible = currentFullText.substring(0, spokenCharCount);
-  container.innerText = visible;
-}
-
-// 読み上げ停止ヘルパー
-function stopCurrentSpeech() {
+function stopSpeech() {
   window.speechSynthesis.cancel();
-  clearInterval(keepAliveTimer);
-  if (currentAudio) {
-    try {
-      currentAudio.pause();
-      currentAudio.currentTime = 0;
-    } catch(e) {}
-    currentAudio = null;
-  }
   clearInterval(charTimer);
+  clearInterval(keepAliveTimer);
 }
 
-// 早押しボタン押下（ストップ）
-function handleBuzzer() {
+// 早押しボタン押下
+function onBuzzerPress() {
   if (isStopped) return;
-
   isStopped = true;
   isReading = false;
 
-  // 音声を即時完全ストップ！
-  stopCurrentSpeech();
-
-  playBuzzerSound();
+  stopSpeech();
+  playBuzzer();
 
   const btnBuzzer = document.getElementById('btnBuzzer');
-  btnBuzzer.classList.add('pressed');
+  btnBuzzer.classList.add('stopped');
   btnBuzzer.disabled = true;
 
-  document.getElementById('textCursor').style.display = 'none';
+  document.getElementById('cursorTicker').style.display = 'none';
 
-  const container = document.getElementById('spokenText');
+  // 止まった位置をハイライト
+  const container = document.getElementById('textStream');
   const visible = currentFullText.substring(0, spokenCharCount);
   if (visible.length > 0) {
     const head = visible.slice(0, -1);
     const lastChar = visible.slice(-1);
-    container.innerHTML = escapeHtml(head) + `<span class="paused-highlight">${escapeHtml(lastChar)}</span>`;
+    container.innerHTML = escapeHtml(head) + `<span class="highlight-freeze">${escapeHtml(lastChar)}</span>`;
   }
 
   document.getElementById('btnReveal').focus();
 }
 
-// 答えを表示
+// 答え表示
 function revealAnswer() {
   if (isRevealed) return;
   isRevealed = true;
 
-  document.getElementById('spokenText').innerText = currentFullText;
-  document.getElementById('textCursor').style.display = 'none';
+  document.getElementById('textStream').innerText = currentFullText;
+  document.getElementById('cursorTicker').style.display = 'none';
 
-  document.getElementById('answerText').innerText = currentQuestion.a;
-  const descEl = document.getElementById('descText');
+  document.getElementById('revealAnswerText').innerText = currentQuestion.a;
+  const descEl = document.getElementById('revealDescText');
   if (currentQuestion.desc && currentQuestion.desc.trim()) {
     descEl.innerText = currentQuestion.desc;
     descEl.style.display = 'block';
   } else {
     descEl.style.display = 'none';
   }
-  document.getElementById('answerPanel').style.display = 'block';
+  document.getElementById('revealCard').style.display = 'block';
   document.getElementById('btnReveal').style.display = 'none';
-
   document.getElementById('btnNext').focus();
 }
 
@@ -1056,92 +851,52 @@ function nextQuestion() {
   startQuestion(currentIndex + 1);
 }
 
-function setupControls() {
-  // スタートボタン
-  const btnStart = document.getElementById('btnStartGame');
-  if (btnStart) {
-    btnStart.addEventListener('click', startGame);
-  }
+function setupEvents() {
+  document.getElementById('btnStartGame').addEventListener('click', startGame);
 
   const btnBuzzer = document.getElementById('btnBuzzer');
-  btnBuzzer.addEventListener('click', handleBuzzer);
+  btnBuzzer.addEventListener('click', onBuzzerPress);
   btnBuzzer.addEventListener('touchstart', (e) => {
     e.preventDefault();
-    handleBuzzer();
+    onBuzzerPress();
   });
 
   document.getElementById('btnReveal').addEventListener('click', revealAnswer);
   document.getElementById('btnNext').addEventListener('click', nextQuestion);
 
-  // キャラクター（声）選択
-  const speakerSelect = document.getElementById('speakerSelect');
-  speakerSelect.addEventListener('change', (e) => {
-    selectedSpeakerKey = e.target.value;
-    localStorage.setItem('quiz_speaker', selectedSpeakerKey);
-    // 現在の問題を新しい声でリスタート
-    if (isGameStarted && !isStopped) {
-      startQuestion(currentIndex);
-    }
-  });
-  const savedSpeaker = localStorage.getItem('quiz_speaker');
-  if (savedSpeaker && SPEAKER_MAP[savedSpeaker]) {
-    selectedSpeakerKey = savedSpeaker;
-    speakerSelect.value = savedSpeaker;
-  }
-
-  // 速度変更（ゆっくり 0.75x -> ふつう 1.0x -> 早口 1.3x）
-  const SPEED_PRESETS = [
-    { rate: 0.75, icon: '🐢', label: 'ゆっくり (0.75x)' },
-    { rate: 1.0,  icon: '🚶', label: 'ふつう (1.0x)' },
-    { rate: 1.3,  icon: '🐇', label: '早口 (1.3x)' }
-  ];
-  let currentSpeedIndex = 0; // デフォルト：ゆっくり
-
-  // 保存された速度を復元
-  const savedRate = parseFloat(localStorage.getItem('quiz_speech_rate'));
-  if (!isNaN(savedRate)) {
-    const idx = SPEED_PRESETS.findIndex(p => Math.abs(p.rate - savedRate) < 0.05);
-    if (idx !== -1) currentSpeedIndex = idx;
-  }
-  speechRate = SPEED_PRESETS[currentSpeedIndex].rate;
-
-  const btnSpeed = document.getElementById('btnSpeed');
-  function updateSpeedButtonUI() {
-    const p = SPEED_PRESETS[currentSpeedIndex];
-    btnSpeed.innerHTML = `<span>${p.icon}</span> 速度: <span>${p.label}</span>`;
-  }
-  updateSpeedButtonUI();
-
-  btnSpeed.addEventListener('click', () => {
-    currentSpeedIndex = (currentSpeedIndex + 1) % SPEED_PRESETS.length;
-    speechRate = SPEED_PRESETS[currentSpeedIndex].rate;
-    localStorage.setItem('quiz_speech_rate', speechRate);
-    updateSpeedButtonUI();
-
-    // 読み上げ中の場合、即座に新しい速度を音声に適用
+  // キャラクター変更
+  const spkSelect = document.getElementById('speakerSelect');
+  spkSelect.addEventListener('change', (e) => {
+    selectedVoiceKey = e.target.value;
     if (isGameStarted && !isStopped && isReading) {
-      if (currentAudio) {
-        currentAudio.playbackRate = speechRate;
-      }
+      speakAndStream(currentFullText, spokenCharCount);
     }
   });
 
+  // 速度変更（即時反映）
+  const btnSpeed = document.getElementById('btnSpeed');
+  btnSpeed.addEventListener('click', () => {
+    speedIndex = (speedIndex + 1) % SPEEDS.length;
+    speechRate = SPEEDS[speedIndex].rate;
+    document.getElementById('speedIcon').innerText = SPEEDS[speedIndex].icon;
+    document.getElementById('speedText').innerText = SPEEDS[speedIndex].label;
+
+    if (isGameStarted && !isStopped && isReading) {
+      speakAndStream(currentFullText, spokenCharCount);
+    }
+  });
+
+  // ミュート
   const btnSound = document.getElementById('btnSound');
-  const soundText = document.getElementById('soundText');
   btnSound.addEventListener('click', () => {
     soundEnabled = !soundEnabled;
-    soundText.innerText = soundEnabled ? '音声 ON' : '音声 OFF';
-    btnSound.classList.toggle('active', !soundEnabled);
-    if (!soundEnabled) {
-      stopCurrentSpeech();
-    }
+    document.getElementById('soundIcon').innerText = soundEnabled ? '🔊' : '🔇';
+    if (!soundEnabled) stopSpeech();
     initAudio();
   });
-}
 
-function setupKeyEvents() {
+  // キーボード操作
   window.addEventListener('keydown', (e) => {
-    // ゲーム未開始時、SpaceまたはEnterでゲーム開始
     if (!isGameStarted) {
       if (e.code === 'Space' || e.key === 'Enter') {
         e.preventDefault();
@@ -1149,11 +904,10 @@ function setupKeyEvents() {
       }
       return;
     }
-
     if (e.code === 'Space') {
       e.preventDefault();
       if (!isStopped) {
-        handleBuzzer();
+        onBuzzerPress();
       } else if (!isRevealed) {
         revealAnswer();
       }
@@ -1167,24 +921,6 @@ function setupKeyEvents() {
       }
     }
   });
-}
-
-function setupTheme() {
-  const btnTheme = document.getElementById('btnTheme');
-  btnTheme.addEventListener('click', () => {
-    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-    if (isLight) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('quiz_theme', 'dark');
-    } else {
-      document.documentElement.setAttribute('data-theme', 'light');
-      localStorage.setItem('quiz_theme', 'light');
-    }
-  });
-  const saved = localStorage.getItem('quiz_theme');
-  if (saved) {
-    document.documentElement.setAttribute('data-theme', saved);
-  }
 }
 
 function escapeHtml(str) {
