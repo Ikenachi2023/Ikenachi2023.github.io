@@ -511,11 +511,10 @@
     <!-- 声（キャラクター）選択 -->
     <div class="pill-select-wrapper">
       <select class="pill-select" id="speakerSelect" title="出題者の声（キャラクター）を変更">
-        <option value="metan" selected>🌸 四国めたん風 (高め・明瞭)</option>
-        <option value="zundamon">🟢 ずんだもん風 (キャラクター声)</option>
-        <option value="announcer">👩 女性アナウンサー (標準・聞きやすい)</option>
-        <option value="master">🎙️ クイズ番組司会者 (落ち着いた低音)</option>
-        <option value="local_voicevox">💻 ローカルVOICEVOX連携 (PC起動時)</option>
+        <option value="metan" selected>🌸 四国めたん (VOICEVOX 本物)</option>
+        <option value="zundamon">🟢 ずんだもん (VOICEVOX 本物)</option>
+        <option value="ryusei">🎙️ 青山龍星 (VOICEVOX 本物)</option>
+        <option value="tsumugi">💛 春日部つむぎ (VOICEVOX 本物)</option>
       </select>
       <span class="select-arrow">▼</span>
     </div>
@@ -651,13 +650,12 @@ let questions = [];
 let currentIndex = 0;
 let currentQuestion = null;
 
-// 音声・キャラクター設定
+// 音声・キャラクター設定（本物 VOICEVOX 話者ID）
 const SPEAKER_MAP = {
-  metan: { name: '🌸 四国めたん風', pitch: 1.28, rateMul: 1.0, gender: 'female' },
-  zundamon: { name: '🟢 ずんだもん風', pitch: 1.45, rateMul: 1.05, gender: 'female' },
-  announcer: { name: '👩 女性アナウンサー', pitch: 1.05, rateMul: 1.0, gender: 'female' },
-  master: { name: '🎙️ クイズ番組司会者', pitch: 0.88, rateMul: 0.95, gender: 'male' },
-  local_voicevox: { name: '💻 ローカルVOICEVOX連携', isLocal: true }
+  metan: { id: 2, name: '🌸 四国めたん (VOICEVOX 本物)' },
+  zundamon: { id: 3, name: '🟢 ずんだもん (VOICEVOX 本物)' },
+  ryusei: { id: 13, name: '🎙️ 青山龍星 (VOICEVOX 本物)' },
+  tsumugi: { id: 8, name: '💛 春日部つむぎ (VOICEVOX 本物)' }
 };
 let selectedSpeakerKey = 'metan';
 
@@ -669,11 +667,15 @@ let speechRate = 0.85; // ゆっくり
 let soundEnabled = true;
 
 let charTimer = null;
-let keepAliveTimer = null; // Chromeの15秒音声途切れバグ対策用
 let spokenCharCount = 0;
 let currentFullText = "";
-let currentUtterance = null;
 let currentAudio = null;
+
+// VOICEVOX チャンク再生キュー
+let voicePlayQueue = [];
+let currentChunkIndex = 0;
+let baseCharCount = 0;
+const audioCache = new Map();
 
 // Web Audio API（早押し音）
 const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -713,13 +715,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setupControls();
   setupKeyEvents();
   loadQuizData();
-
-  // ブラウザの日本語音声一覧をプリロード
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.onvoiceschanged = () => {
-      window.speechSynthesis.getVoices();
-    };
-  }
 });
 
 // クイズデータの動的読み込み
@@ -795,67 +790,144 @@ async function startQuestion(index) {
   btnBuzzer.disabled = false;
   btnBuzzer.classList.remove('pressed');
 
-  // 音声合成と再生の開始
+  // 本物 VOICEVOX による再生開始
   playQuestionVoice(currentFullText);
 }
 
-// 音声再生（完全無料・途切れゼロ・高精度同期）
+// 本物 VOICEVOX 音声再生（分割ストリーミングで途切れゼロ）
 async function playQuestionVoice(text) {
   const speaker = SPEAKER_MAP[selectedSpeakerKey] || SPEAKER_MAP.metan;
   document.getElementById('currentSpeakerTag').innerText = speaker.name;
 
-  // ローカルVOICEVOX直接連携モード（PCでVOICEVOXアプリが起動している場合）
-  if (speaker.isLocal && soundEnabled) {
-    try {
-      await playLocalVoicevox(text);
-      return;
-    } catch(e) {
-      console.warn('Local VOICEVOX not available, falling back to Web Speech:', e);
-    }
-  }
-
-  // ブラウザ標準 Web Speech API（完全無料・無制限・途切れゼロ）
-  startSynchronizedWebSpeech(text, speaker);
-}
-
-// ブラウザ標準 Web Speech API の完璧な同期＆長文途切れ対策
-function startSynchronizedWebSpeech(text, speaker, startCharIndex = 0) {
-  if (!('speechSynthesis' in window)) {
+  if (!soundEnabled) {
     fallbackTextOnly(text);
     return;
   }
 
-  window.speechSynthesis.cancel();
-  clearInterval(charTimer);
-  clearInterval(keepAliveTimer);
+  // 文章を句読点（20〜30文字程度）に分割して長文制限を完全回避
+  const chunks = splitTextIntoChunks(text);
+  voicePlayQueue = chunks;
+  currentChunkIndex = 0;
+  baseCharCount = 0;
+  spokenCharCount = 0;
 
-  const textToSpeak = startCharIndex > 0 ? text.substring(startCharIndex) : text;
-  const utterance = new SpeechSynthesisUtterance(textToSpeak);
-  utterance.lang = 'ja-JP';
+  playNextVoicevoxChunk(speaker.id);
+}
 
-  // キャラクターに応じた声色チューニング
-  utterance.pitch = speaker.pitch || 1.0;
-  const effectiveRate = speechRate * (speaker.rateMul || 1.0);
-  utterance.rate = effectiveRate;
-
-  // 最適な日本語音声を検索して適用
-  const voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('ja'));
-  if (voices.length > 0) {
-    if (speaker.gender === 'male') {
-      const maleVoice = voices.find(v => /ichiro|keita|male|男性/i.test(v.name));
-      if (maleVoice) utterance.voice = maleVoice;
-    } else {
-      const femaleVoice = voices.find(v => /nanami|ayumi|haruka|kyoko|female|女性/i.test(v.name)) || voices[0];
-      if (femaleVoice) utterance.voice = femaleVoice;
+// 句読点でテキストを分割
+function splitTextIntoChunks(text) {
+  const parts = text.split(/([、。！？\n])/);
+  const chunks = [];
+  let current = "";
+  for (let i = 0; i < parts.length; i++) {
+    current += parts[i];
+    if (parts[i].match(/[、。！？\n]/) || current.length >= 28) {
+      if (current.trim().length > 0) {
+        chunks.push(current);
+        current = "";
+      }
     }
   }
+  if (current.trim().length > 0) chunks.push(current);
+  return chunks.length > 0 ? chunks : [text];
+}
 
-  // 1文字あたりのミリ秒（同期用）
-  const msPerChar = Math.max(30, Math.round(230 / effectiveRate));
+// TTS Quest API から本物 VOICEVOX の音声URLを取得（キャッシュ付き）
+async function fetchVoicevoxAudioUrl(chunkText, speakerId) {
+  const cacheKey = `${speakerId}_${chunkText}`;
+  if (audioCache.has(cacheKey)) return audioCache.get(cacheKey);
 
-  // スムーズな文字送りタイマー
+  const apiUrl = `https://api.tts.quest/v3/voicevox/synthesis?speaker=${speakerId}&text=${encodeURIComponent(chunkText)}`;
+  const res = await fetch(apiUrl);
+  if (!res.ok) throw new Error('API network error');
+  const data = await res.json();
+  const url = data.mp3StreamingUrl || data.mp3DownloadUrl;
+  if (!url) throw new Error('No audio URL returned');
+
+  audioCache.set(cacheKey, url);
+  return url;
+}
+
+// 本物 VOICEVOX チャンクの連続再生＆完璧な文字送り同期
+async function playNextVoicevoxChunk(speakerId) {
+  if (isStopped || !isReading) return;
+
+  if (currentChunkIndex >= voicePlayQueue.length) {
+    isReading = false;
+    spokenCharCount = currentFullText.length;
+    renderSpokenText();
+    document.getElementById('textCursor').style.display = 'none';
+    return;
+  }
+
+  const chunk = voicePlayQueue[currentChunkIndex];
+  const chunkStartBase = baseCharCount;
+
+  try {
+    const audioUrl = await fetchVoicevoxAudioUrl(chunk, speakerId);
+    if (isStopped || !isReading) return;
+
+    currentAudio = new Audio(audioUrl);
+    currentAudio.playbackRate = speechRate;
+
+    // 次のチャンクをバックグラウンドで先読み（プリフェッチ）
+    if (currentChunkIndex + 1 < voicePlayQueue.length) {
+      fetchVoicevoxAudioUrl(voicePlayQueue[currentChunkIndex + 1], speakerId).catch(() => {});
+    }
+
+    currentAudio.addEventListener('loadedmetadata', () => {
+      if (isStopped || !isReading) return;
+      const durationMs = (currentAudio.duration / currentAudio.playbackRate) * 1000;
+      const msPerChar = Math.max(25, Math.round(durationMs / chunk.length));
+
+      clearInterval(charTimer);
+      charTimer = setInterval(() => {
+        if (isStopped || !isReading) {
+          clearInterval(charTimer);
+          return;
+        }
+        if (spokenCharCount < chunkStartBase + chunk.length) {
+          spokenCharCount++;
+          renderSpokenText();
+        } else {
+          clearInterval(charTimer);
+        }
+      }, msPerChar);
+
+      const p = currentAudio.play();
+      if (p && p.catch) p.catch(() => {});
+    });
+
+    currentAudio.addEventListener('ended', () => {
+      clearInterval(charTimer);
+      spokenCharCount = chunkStartBase + chunk.length;
+      renderSpokenText();
+      baseCharCount += chunk.length;
+      currentChunkIndex++;
+      playNextVoicevoxChunk(speakerId);
+    });
+
+    currentAudio.addEventListener('error', () => {
+      console.warn('Audio play error, skipping chunk');
+      baseCharCount += chunk.length;
+      currentChunkIndex++;
+      playNextVoicevoxChunk(speakerId);
+    });
+
+  } catch(err) {
+    console.warn('VOICEVOX chunk fetch failed, text fallback:', err);
+    // 万が一ネットワークが遅延した場合でも文字を進めて次へ
+    baseCharCount += chunk.length;
+    currentChunkIndex++;
+    playNextVoicevoxChunk(speakerId);
+  }
+}
+
+function fallbackTextOnly(text) {
+  const msPerChar = Math.round(230 / speechRate);
+  clearInterval(charTimer);
   charTimer = setInterval(() => {
-    if (isStopped || !isReading) {
+    if (isStopped) {
       clearInterval(charTimer);
       return;
     }
@@ -864,85 +936,29 @@ function startSynchronizedWebSpeech(text, speaker, startCharIndex = 0) {
       renderSpokenText();
     } else {
       clearInterval(charTimer);
+      isReading = false;
       document.getElementById('textCursor').style.display = 'none';
     }
   }, msPerChar);
-
-  // 音声の境界イベント（ブラウザが今読んでいる文字位置を正確に取得）
-  utterance.onboundary = (event) => {
-    if (isStopped) return;
-    if (event.charIndex !== undefined) {
-      const actualIndex = startCharIndex + event.charIndex;
-      if (actualIndex > spokenCharCount) {
-        spokenCharCount = actualIndex;
-        renderSpokenText();
-      }
-    }
-  };
-
-  // Chromeの15秒途切れバグ対策
-  keepAliveTimer = setInterval(() => {
-    if (!isReading || isStopped) {
-      clearInterval(keepAliveTimer);
-      return;
-    }
-    window.speechSynthesis.pause();
-    window.speechSynthesis.resume();
-  }, 10000);
-
-  utterance.onend = () => {
-    clearInterval(keepAliveTimer);
-    if (!isStopped) {
-      isReading = false;
-      spokenCharCount = text.length;
-      renderSpokenText();
-      document.getElementById('textCursor').style.display = 'none';
-    }
-  };
-
-  utterance.onerror = (e) => {
-    clearInterval(keepAliveTimer);
-    isReading = false;
-  };
-
-  currentUtterance = utterance;
-
-  if (soundEnabled) {
-    window.speechSynthesis.speak(utterance);
-  }
 }
 
-// ローカルVOICEVOX直接連携（オプション）
-async function playLocalVoicevox(text) {
-  const queryRes = await fetch(`http://127.0.0.1:50021/audio_query?text=${encodeURIComponent(text)}&speaker=2`, { method: 'POST' });
-  const queryJson = await queryRes.json();
-  const synthRes = await fetch(`http://127.0.0.1:50021/synthesis?speaker=2`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(queryJson)
-  });
-  const blob = await synthRes.blob();
-  const blobUrl = URL.createObjectURL(blob);
-  currentAudio = new Audio(blobUrl);
+function renderSpokenText() {
+  const container = document.getElementById('spokenText');
+  const visible = currentFullText.substring(0, spokenCharCount);
+  container.innerText = visible;
+}
 
-  currentAudio.addEventListener('loadedmetadata', () => {
-    if (isStopped || !isReading) return;
-    const msPerChar = Math.max(30, Math.round((currentAudio.duration * 1000) / text.length));
-    clearInterval(charTimer);
-    charTimer = setInterval(() => {
-      if (isStopped || !isReading) {
-        clearInterval(charTimer);
-        return;
-      }
-      if (spokenCharCount < text.length) {
-        spokenCharCount++;
-        renderSpokenText();
-      } else {
-        clearInterval(charTimer);
-      }
-    }, msPerChar);
-    currentAudio.play();
-  });
+// 読み上げ停止ヘルパー
+function stopCurrentSpeech() {
+  if (currentAudio) {
+    try {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+    } catch(e) {}
+    currentAudio = null;
+  }
+  voicePlayQueue = [];
+  clearInterval(charTimer);
 }
 
 
@@ -1102,15 +1118,10 @@ function setupControls() {
     localStorage.setItem('quiz_speech_rate', speechRate);
     updateSpeedButtonUI();
 
-    // 読み上げ中の場合、即座に新しい速度で再開して変化を体感できるようにする
+    // 読み上げ中の場合、即座に新しい速度を音声に適用
     if (isGameStarted && !isStopped && isReading) {
-      stopCurrentSpeech();
-      // 残りの文章または最初から新しい速度で再生
-      const remainingText = currentFullText.substring(spokenCharCount);
-      if (remainingText.length > 0) {
-        startSynchronizedWebSpeech(currentFullText, SPEAKER_MAP[selectedSpeakerKey] || SPEAKER_MAP.metan, spokenCharCount);
-      } else {
-        startQuestion(currentIndex);
+      if (currentAudio) {
+        currentAudio.playbackRate = speechRate;
       }
     }
   });
