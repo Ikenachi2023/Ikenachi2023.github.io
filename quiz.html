@@ -649,8 +649,6 @@
     .action-btn { justify-content: center; }
   }
 </style>
-<!-- 漢字の読み（ひらがな）変換用 kuromoji.js (非同期バックグラウンド読込) -->
-<script src="https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js" defer></script>
 </head>
 <body>
 
@@ -827,11 +825,10 @@ let micStartTimer = null;
 let currentSessionId = 0;
 let lastActionTime = 0;
 
-// --- 音声認識 (SpeechRecognition) & 形態素解析 (kuromoji) ---
+// --- 音声認識 (SpeechRecognition) ---
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
 let isRecognizing = false;
-let kuromojiTokenizer = null;
 
 // キャッシュ & リクエスト追跡: key = `${speakerId}:${text}`
 const audioCache = new Map();
@@ -922,19 +919,6 @@ function playWrongSound() {
   } catch(e) {}
 }
 
-// --- 漢字の読み仮名化 (kuromoji.js) 初期化 ---
-function initKuromoji() {
-  if (typeof kuromoji === 'undefined') {
-    setTimeout(initKuromoji, 1000);
-    return;
-  }
-  kuromoji.builder({ dicPath: 'https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/' }).build((err, tokenizer) => {
-    if (!err && tokenizer) {
-      kuromojiTokenizer = tokenizer;
-    }
-  });
-}
-
 // カタカナをひらがなに変換
 function toHiragana(str) {
   return str.replace(/[\u30a1-\u30f6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
@@ -970,22 +954,6 @@ function normalizeQuizStr(str) {
   s = kanjiNumToArabic(s);
   s = s.replace(/[『』「」【】〔〕［］\[\]"'”’・、。，．！？!?〜～~\s　\-_]/g, '');
   return s;
-}
-
-// kuromoji がロード済みならテキストをすべて「ひらがな読み」に変換して正規化
-function toPhoneticNormalized(str) {
-  if (!str) return '';
-  const cleaned = str
-    .replace(/^(えーと|えっと|あのー|あの|答えは|こたえは)\s*/, '')
-    .replace(/(です|ます|だ|かな|でしょう|だと思います|ですか)$/, '');
-  if (!kuromojiTokenizer) return normalizeQuizStr(cleaned);
-  try {
-    const tokens = kuromojiTokenizer.tokenize(cleaned);
-    const reading = tokens.map(t => t.reading || t.surface_form).join('');
-    return normalizeQuizStr(reading);
-  } catch (e) {
-    return normalizeQuizStr(cleaned);
-  }
 }
 
 // 問題データの正解文字列から有効な正解パターン一覧を抽出
@@ -1030,8 +998,6 @@ function extractValidAnswers(rawAnswer) {
   for (const item of rawSet) {
     const n1 = normalizeQuizStr(item);
     if (n1) normSet.add(n1);
-    const n2 = toPhoneticNormalized(item);
-    if (n2) normSet.add(n2);
   }
   return Array.from(normSet);
 }
@@ -1042,15 +1008,13 @@ function isQuizAnswerMatch(spokenCandidates, rawAnswer) {
   if (validTargets.length === 0) return false;
 
   for (const cand of spokenCandidates) {
-    const forms = [normalizeQuizStr(cand), toPhoneticNormalized(cand)].filter(Boolean);
-    for (const s of forms) {
-      if (!s) continue;
-      for (const target of validTargets) {
-        if (s === target) return true;
-        // 3文字以上の正解が発話内に完全に含まれている場合（例: 「答えは北岳です」など）
-        if (target.length >= 2 && s.includes(target) && s.length <= target.length + 5) {
-          return true;
-        }
+    const s = normalizeQuizStr(cand);
+    if (!s) continue;
+    for (const target of validTargets) {
+      if (s === target) return true;
+      // 2文字以上の正解が発話内に完全に含まれている場合（例: 「答えは北岳です」など）
+      if (target.length >= 2 && s.includes(target) && s.length <= target.length + 5) {
+        return true;
       }
     }
   }
@@ -1073,10 +1037,10 @@ function stopVoiceRecognition() {
   }
 }
 
-// 早押し後の音声認識スタート
+// 早押し後の音声認識スタート（ユーザージェスチャー内で即座に開始）
 function startVoiceRecognition(sessionId) {
   stopVoiceRecognition();
-  if (sessionId !== currentSessionId || isRevealed) return;
+  if (sessionId !== currentSessionId || isRevealed || !isBuzzerStopped) return;
 
   const card = document.getElementById('voiceAnswerCard');
   const promptEl = document.getElementById('voicePromptText');
@@ -1095,7 +1059,12 @@ function startVoiceRecognition(sessionId) {
     return;
   }
 
-  promptEl.innerText = '🎙️ マイクに向かって答えをどうぞ...';
+  promptEl.innerText = '🎙️ マイク聞き取り中... 答えを声に出してください';
+
+  let hasEvaluated = false;
+  let lastInterim = '';
+  let lastAlternatives = [];
+  let fatalError = false;
 
   try {
     const rec = new SpeechRecognition();
@@ -1108,37 +1077,64 @@ function startVoiceRecognition(sessionId) {
     isRecognizing = true;
 
     rec.onresult = (event) => {
-      if (rec._ignoreEvents || sessionId !== currentSessionId || isRevealed) return;
+      if (rec._ignoreEvents || sessionId !== currentSessionId || isRevealed || hasEvaluated) return;
       const result = event.results[event.results.length - 1];
-      const topTranscript = result[0].transcript.trim();
-      transcriptEl.innerText = `「${topTranscript}」`;
+      if (!result || !result[0]) return;
 
-      if (result.isFinal) {
-        const alternatives = [];
+      const topTranscript = result[0].transcript.trim();
+      if (topTranscript) {
+        lastInterim = topTranscript;
+        transcriptEl.innerText = `「${topTranscript}」`;
+        lastAlternatives = [];
         for (let i = 0; i < result.length; i++) {
-          if (result[i].transcript) alternatives.push(result[i].transcript.trim());
+          if (result[i].transcript) lastAlternatives.push(result[i].transcript.trim());
         }
+      }
+
+      if (result.isFinal && lastInterim) {
+        hasEvaluated = true;
         stopVoiceRecognition();
-        evaluateUserAnswer(alternatives, topTranscript, sessionId);
+        evaluateUserAnswer(lastAlternatives.length ? lastAlternatives : [lastInterim], lastInterim, sessionId);
       }
     };
 
     rec.onerror = (event) => {
-      if (rec._ignoreEvents || sessionId !== currentSessionId || isRevealed) return;
+      if (rec._ignoreEvents || sessionId !== currentSessionId || isRevealed || hasEvaluated) return;
       isRecognizing = false;
-      pulseDot.style.display = 'none';
-      if (event.error === 'no-speech') {
-        promptEl.innerText = '🎙️ 音声が検出されませんでした（「言い直す」または「読み上げ再開」）';
-      } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-        promptEl.innerText = '⚠️ マイク権限がオフです。下のテキスト欄から回答できます';
-      } else {
-        promptEl.innerText = '🎙️ 聞き取れませんでした（「言い直す」またはテキスト入力）';
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed' || event.error === 'audio-capture') {
+        fatalError = true;
+        pulseDot.style.display = 'none';
+        promptEl.innerText = '⚠️ マイクの使用が許可されていないか利用できません。下の欄からテキスト回答できます';
+      } else if (event.error === 'no-speech') {
+        promptEl.innerText = '🎙️ 聞き取り待機中... マイクに向かって答えてください';
+      } else if (event.error !== 'aborted') {
+        fatalError = true;
+        pulseDot.style.display = 'none';
+        promptEl.innerText = '🎙️ 聞き取れませんでした（「言い直す」を押すかテキストで回答してください）';
       }
     };
 
     rec.onend = () => {
-      if (rec._ignoreEvents || sessionId !== currentSessionId || isRevealed) return;
+      if (rec._ignoreEvents || sessionId !== currentSessionId || isRevealed || hasEvaluated) return;
       isRecognizing = false;
+
+      // 途中まで認識していた言葉があればそれで判定する
+      if (lastInterim) {
+        hasEvaluated = true;
+        evaluateUserAnswer(lastAlternatives.length ? lastAlternatives : [lastInterim], lastInterim, sessionId);
+        return;
+      }
+
+      // まだ何も話しておらずエラーでもない場合は、回答待ちの間マイク認識を自動継続する
+      if (!fatalError && isBuzzerStopped && !isRevealed && sessionId === currentSessionId) {
+        try {
+          rec.start();
+          isRecognizing = true;
+        } catch (e) {
+          pulseDot.style.display = 'none';
+          promptEl.innerText = '🎙️ 「言い直す」ボタンを押すか、下の欄から回答してください';
+        }
+      }
     };
 
     rec.start();
@@ -1253,7 +1249,6 @@ function prefetchQuestion(index, speakerId = selectedSpeakerId) {
 document.addEventListener('DOMContentLoaded', () => {
   setupEvents();
   loadQuestions();
-  initKuromoji();
 });
 
 // 問題データ読み込み
@@ -1624,11 +1619,8 @@ function onBuzzerPress() {
   const container = document.getElementById('textStream');
   container.innerHTML = escapeHtml(before) + `<span class="highlight-freeze">${escapeHtml(frozenChar)}</span>`;
 
-  // 早押し効果音が鳴り終わる直後（260ms後）にマイク音声認識を自動開始
-  const sessionId = currentSessionId;
-  micStartTimer = setTimeout(() => {
-    startVoiceRecognition(sessionId);
-  }, 260);
+  // ユーザージェスチャー内で即座にマイク音声認識を開始
+  startVoiceRecognition(currentSessionId);
 }
 
 // 答え表示
