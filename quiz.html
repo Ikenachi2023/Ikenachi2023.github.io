@@ -180,28 +180,130 @@
 
   .start-subtitle {
     color: var(--text-secondary);
-    font-size: 15px;
-    line-height: 1.7;
-    max-width: 520px;
+    font-size: 14px;
+    line-height: 1.65;
+    max-width: 560px;
     font-weight: 500;
   }
 
-  .char-preview-row {
-    display: flex;
-    gap: 10px;
-    margin: 8px 0;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .char-badge {
-    padding: 6px 14px;
-    border-radius: 9999px;
+  /* 大会別MODE 選択パネル */
+  .tournament-mode-box {
+    width: 100%;
     background: var(--surface-elevated);
     border: 1px solid var(--border);
-    font-size: 13px;
-    font-weight: 700;
+    border-radius: 20px;
+    padding: 18px 20px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .tournament-box-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .tournament-box-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--spotify-green);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .order-toggle-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
     color: var(--text-secondary);
+    padding: 5px 12px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .order-toggle-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--border-hover);
+  }
+  .order-toggle-btn.sequential {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(251, 191, 36, 0.1);
+  }
+
+  .tournament-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
+    gap: 8px;
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .tournament-grid::-webkit-scrollbar {
+    width: 6px;
+  }
+  .tournament-grid::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .tournament-grid::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 9999px;
+  }
+
+  .tournament-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    text-align: left;
+    font-family: inherit;
+    color: var(--text-primary);
+  }
+  .tournament-card:hover {
+    border-color: var(--border-hover);
+    background: var(--surface-hover);
+    transform: translateY(-1px);
+  }
+  .tournament-card.active {
+    border-color: var(--spotify-green);
+    background: var(--spotify-green-dim);
+    box-shadow: 0 0 0 1px var(--spotify-green);
+  }
+
+  .t-card-name {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tournament-card.active .t-card-name {
+    color: var(--spotify-green);
+  }
+
+  .t-card-meta {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
   /* ステージメタバー */
@@ -209,6 +311,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
   }
 
   .meta-left {
@@ -290,7 +394,7 @@
     padding: 5px 14px;
     border-radius: 9999px;
     border: 1px solid var(--border);
-    max-width: 280px;
+    max-width: 340px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -638,13 +742,16 @@
   }
 
   @media (max-width: 640px) {
-    header { padding: 16px 16px 8px; }
+    header { padding: 14px 12px 8px; flex-wrap: wrap; gap: 8px; }
+    .header-actions { width: 100%; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
     .viewport { padding: 12px 14px 36px; }
-    .player-stage { padding: 24px 20px 22px; border-radius: 20px; gap: 20px; }
+    .player-stage { padding: 22px 18px 20px; border-radius: 20px; gap: 18px; }
+    .start-view { padding: 18px 6px; gap: 16px; }
+    .tournament-grid { grid-template-columns: 1fr 1fr; max-height: 220px; }
     .lyrics-display { min-height: 160px; padding: 22px 18px; }
     .lyrics-content { font-size: 20px; line-height: 1.75; }
     .buzzer-core-btn { height: 76px; font-size: 20px; }
-    .start-title { font-size: 28px; }
+    .start-title { font-size: 26px; }
     .bottom-actions { flex-direction: column; }
     .action-btn { justify-content: center; }
   }
@@ -661,6 +768,33 @@
   </div>
 
   <div class="header-actions">
+    <!-- 大会別MODE 選択ドロップダウン（プレイ中もいつでも切替可能） -->
+    <select class="pill-control" id="tournamentSelect" title="出題する大会を選択" style="max-width: 220px;">
+      <option value="all" selected>🏆 全大会シャッフル (16,540問)</option>
+      <optgroup label="🌟 abc ～the national student quiz～">
+        <option value="abc1">abc the first (1,755問)</option>
+        <option value="abc2">abc the second (1,695問)</option>
+        <option value="abc3">abc the third (1,645問)</option>
+        <option value="abc4">abc the fourth (1,645問)</option>
+        <option value="abc5">abc the fifth (1,456問)</option>
+        <option value="abc6">abc the sixth / EQIDEN (1,500問)</option>
+        <option value="abc7">abc the seventh / EQIDEN (1,500問)</option>
+      </optgroup>
+      <optgroup label="👑 マンオブザイヤー / サイヤー">
+        <option value="mansai1">第1回 マンオブサイヤー (950問)</option>
+        <option value="moy14">第14回 マンオブザイヤー (417問)</option>
+        <option value="moy15">第15回 マンオブザイヤー (280問)</option>
+      </optgroup>
+      <optgroup label="⚡ オープン大会・TV番組企画">
+        <option value="ten2">天2 ～TEN second～ (803問)</option>
+        <option value="ultra2007">アメリカ横断ウルトラクイズ (701問)</option>
+        <option value="east_sin2">第2回 東日本新人王 (674問)</option>
+        <option value="east_haya2">第2回 東日本早押王 (649問)</option>
+        <option value="qbc1">Quiz Battle Club 1st (468問)</option>
+        <option value="burn2009">バーン高校生クイズ (402問)</option>
+      </optgroup>
+    </select>
+
     <!-- VOICEVOX キャラクター選択 -->
     <select class="pill-control" id="speakerSelect" title="VOICEVOX 声を選択">
       <option value="3" selected>🟢 ずんだもん</option>
@@ -686,26 +820,32 @@
     <!-- 1. スタート画面 -->
     <div class="start-view" id="startScreen">
       <div class="badge-voicevox">
-        <span>VOICEVOX 純粋音声 × 音声認識回答</span>
+        <span>VOICEVOX 純粋音声 × 音声認識回答 × 大会別MODE</span>
       </div>
       <h1 class="start-title">クイズの杜 早押し</h1>
       <p class="start-subtitle">
-        クイズの杜 950問の過去問アーカイブを収録。<br>
-        ボタンを押してマイクで回答！外れたら続きから読み上げが再開します。
+        全16大会・16,540問の競技クイズ過去問アーカイブを収録。<br>
+        大会を選んでスタート！ボタンを押してマイクで回答、外れたら続きから読み上げが再開します。
       </p>
 
-      <div class="char-preview-row">
-        <span class="char-badge">🟢 ずんだもん</span>
-        <span class="char-badge">🌸 四国めたん</span>
-        <span class="char-badge">🎙️ 青山龍星</span>
-        <span class="char-badge">💛 春日部つむぎ</span>
+      <!-- 大会別MODE 選択グリッド -->
+      <div class="tournament-mode-box">
+        <div class="tournament-box-header">
+          <div class="tournament-box-title">
+            <span>🏆 大会別MODEを選択</span>
+          </div>
+          <button type="button" class="order-toggle-btn" id="btnOrderToggle" title="出題順序を切り替え">
+            🔀 シャッフル出題
+          </button>
+        </div>
+        <div class="tournament-grid" id="tournamentGrid"></div>
       </div>
 
-      <button class="action-btn btn-green" id="btnStartGame" style="padding: 18px 40px; font-size: 18px; margin-top: 10px;">
+      <button class="action-btn btn-green" id="btnStartGame" style="padding: 16px 40px; font-size: 18px; margin-top: 4px;">
         クイズを開始
       </button>
       <div class="shortcut-indicator">
-        <kbd>Space</kbd> キーでも開始できます
+        <kbd>Space</kbd> キーでも開始できます（上部メニューからプレイ中も大会切替可能）
       </div>
     </div>
 
@@ -719,10 +859,10 @@
           </div>
           <div class="track-counter">
             <strong id="currentTrackNum">Q.1</strong>
-            <span style="color:var(--text-muted); font-weight:500;">/ 950</span>
+            <span id="totalTrackCount" style="color:var(--text-muted); font-weight:500;">/ 16540</span>
           </div>
         </div>
-        <div class="category-pill" id="currentTrackSource">マンオブサイヤー</div>
+        <div class="category-pill" id="currentTrackSource">クイズの杜</div>
       </div>
 
       <!-- 問題文表示エリア -->
@@ -788,7 +928,10 @@
 
 <script>
 // --- アプリケーション状態 ---
+let allQuestions = [];
 let questions = [];
+let selectedTournament = 'all';
+let isShuffleOrder = true;
 let currentIndex = 0;
 let currentQuestion = null;
 let isGameStarted = false;
@@ -796,6 +939,27 @@ let isBuzzerStopped = false;
 let isRevealed = false;
 let displayedCharCount = 0;
 let soundEnabled = true;
+
+// 収録大会一覧
+const TOURNAMENTS = [
+  { id: 'all',       name: '🏆 全大会オールスター', tag: '全16大会', count: 16540 },
+  { id: 'abc1',      name: 'abc the first',       tag: '2003 学生日本一', count: 1755 },
+  { id: 'abc2',      name: 'abc the second',      tag: '2004 学生日本一', count: 1695 },
+  { id: 'abc3',      name: 'abc the third',       tag: '2005 学生日本一', count: 1645 },
+  { id: 'abc4',      name: 'abc the fourth',      tag: '2006 学生日本一', count: 1645 },
+  { id: 'abc5',      name: 'abc the fifth',       tag: '2007 学生日本一', count: 1456 },
+  { id: 'abc6',      name: 'abc the sixth / EQIDEN', tag: '2008 学生・駅伝', count: 1500 },
+  { id: 'abc7',      name: 'abc the seventh / EQIDEN', tag: '2009 学生・駅伝', count: 1500 },
+  { id: 'mansai1',   name: '第1回 マンオブサイヤー', tag: '2001 関西理工系', count: 950 },
+  { id: 'ten2',      name: '天2 ～TEN second～',  tag: '2007 オープン', count: 803 },
+  { id: 'ultra2007', name: 'アメリカ横断ウルトラクイズ', tag: 'TV番組企画', count: 701 },
+  { id: 'east_sin2', name: '第2回 東日本新人王',   tag: '2008 新人王戦', count: 674 },
+  { id: 'east_haya2',name: '第2回 東日本早押王',   tag: '2008 早押王戦', count: 649 },
+  { id: 'qbc1',      name: 'Quiz Battle Club 1st',tag: '2004 オープン', count: 468 },
+  { id: 'moy14',     name: '第14回 マンオブザイヤー', tag: '1996 学生王者', count: 417 },
+  { id: 'moy15',     name: '第15回 マンオブザイヤー', tag: '1997 学生王者', count: 280 },
+  { id: 'burn2009',  name: 'バーン高校生クイズ',   tag: '高校生企画', count: 402 }
+];
 
 // 速度設定 (デフォルト: 0.8x)
 const SPEEDS = [
@@ -1245,8 +1409,81 @@ function prefetchQuestion(index, speakerId = selectedSpeakerId) {
   fetchVoicevoxMp3(q.q, speakerId).catch(() => {});
 }
 
+// スタート画面の大会別MODEグリッド描画
+function renderTournamentGrid() {
+  const grid = document.getElementById('tournamentGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  for (const t of TOURNAMENTS) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'tournament-card' + (t.id === selectedTournament ? ' active' : '');
+    btn.innerHTML = `
+      <div class="t-card-name">${escapeHtml(t.name)}</div>
+      <div class="t-card-meta">
+        <span>${escapeHtml(t.tag)}</span>
+        <strong>${t.count.toLocaleString()}問</strong>
+      </div>
+    `;
+    btn.addEventListener('click', () => {
+      selectTournament(t.id, false);
+    });
+    grid.appendChild(btn);
+  }
+}
+
+// 大会の選択・フィルタリング反映
+function selectTournament(tournamentId, restartIfPlaying = true) {
+  selectedTournament = tournamentId;
+
+  const sel = document.getElementById('tournamentSelect');
+  if (sel && sel.value !== tournamentId) {
+    sel.value = tournamentId;
+  }
+
+  renderTournamentGrid();
+  applyTournamentFilter(restartIfPlaying);
+}
+
+// 配列をシャッフル（Fisher-Yates）
+function shuffleArray(arr) {
+  const copy = arr.slice();
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = copy[i];
+    copy[i] = copy[j];
+    copy[j] = tmp;
+  }
+  return copy;
+}
+
+// 選択中の大会と出題順序で問題リストを再構築
+function applyTournamentFilter(restartIfPlaying = false) {
+  if (allQuestions.length === 0) return;
+
+  const filtered = selectedTournament === 'all'
+    ? allQuestions.slice()
+    : allQuestions.filter(q => q.tournament === selectedTournament);
+
+  questions = isShuffleOrder ? shuffleArray(filtered) : filtered;
+  currentIndex = 0;
+
+  const totalEl = document.getElementById('totalTrackCount');
+  if (totalEl) {
+    totalEl.innerText = `/ ${questions.length.toLocaleString()}`;
+  }
+
+  if (isGameStarted && restartIfPlaying) {
+    startQuestion(0);
+  } else if (questions.length > 0) {
+    prefetchQuestion(0, selectedSpeakerId);
+  }
+}
+
 // 画面初期化
 document.addEventListener('DOMContentLoaded', () => {
+  renderTournamentGrid();
   setupEvents();
   loadQuestions();
 });
@@ -1256,21 +1493,16 @@ async function loadQuestions() {
   try {
     const res = await fetch(`quiz_data.json?_t=${Date.now()}`);
     if (!res.ok) throw new Error();
-    const data = await res.json();
-    questions = data.sort(() => Math.random() - 0.5);
-
-    // 最初の問題を即座に先読み
-    if (questions.length > 0) {
-      prefetchQuestion(0);
-    }
+    allQuestions = await res.json();
+    applyTournamentFilter(false);
   } catch(e) {
-    questions = [
-      { q: "日本で一番高い山は富士山ですが、二番目に高い山は何でしょう？", a: "北岳", source: "競技クイズ定番" },
-      { q: "元素記号「Au」で表される金属は何でしょう？", a: "金", source: "競技クイズ定番" },
-      { q: "芥川龍之介の小説で、お釈迦様が極楽の蓮池から地獄へ垂らしたものは何でしょう？", a: "蜘蛛の糸", source: "競技クイズ定番" },
-      { q: "ことわざで「急がば」に続く言葉は何でしょう？", a: "回れ", source: "競技クイズ定番" }
+    allQuestions = [
+      { q: "日本で一番高い山は富士山ですが、二番目に高い山は何でしょう？", a: "北岳", source: "競技クイズ定番", tournament: "mansai1" },
+      { q: "元素記号「Au」で表される金属は何でしょう？", a: "金", source: "競技クイズ定番", tournament: "mansai1" },
+      { q: "芥川龍之介の小説で、お釈迦様が極楽の蓮池から地獄へ垂らしたものは何でしょう？", a: "蜘蛛の糸", source: "競技クイズ定番", tournament: "mansai1" },
+      { q: "ことわざで「急がば」に続く言葉は何でしょう？", a: "回れ", source: "競技クイズ定番", tournament: "mansai1" }
     ];
-    prefetchQuestion(0);
+    applyTournamentFilter(false);
   }
 }
 
@@ -1311,7 +1543,9 @@ async function startQuestion(index) {
   const speakerAtStart = selectedSpeakerId;
 
   if (index >= questions.length) {
-    questions.sort(() => Math.random() - 0.5);
+    if (isShuffleOrder) {
+      questions = shuffleArray(questions);
+    }
     index = 0;
   }
 
@@ -1324,6 +1558,7 @@ async function startQuestion(index) {
   const spk = SPEAKERS[speakerAtStart] || SPEAKERS['3'];
 
   document.getElementById('currentTrackNum').innerText = `Q.${currentIndex + 1}`;
+  document.getElementById('totalTrackCount').innerText = `/ ${questions.length.toLocaleString()}`;
   document.getElementById('currentTrackSource').innerText = currentQuestion.source || 'クイズの杜';
   document.getElementById('cursorTicker').style.display = 'none';
   document.getElementById('voiceAnswerCard').style.display = 'none';
@@ -1683,6 +1918,23 @@ function setupEvents() {
   document.getElementById('btnStartGame').addEventListener('click', (e) => {
     e.currentTarget.blur();
     startGame();
+  });
+
+  // 大会別MODE 選択ドロップダウン（ヘッダー）
+  const tSelect = document.getElementById('tournamentSelect');
+  tSelect.addEventListener('change', (e) => {
+    e.currentTarget.blur();
+    selectTournament(e.target.value, true);
+  });
+
+  // 出題順序トグル（シャッフル / 収録順）
+  const btnOrder = document.getElementById('btnOrderToggle');
+  btnOrder.addEventListener('click', (e) => {
+    e.currentTarget.blur();
+    isShuffleOrder = !isShuffleOrder;
+    btnOrder.className = 'order-toggle-btn' + (isShuffleOrder ? '' : ' sequential');
+    btnOrder.innerText = isShuffleOrder ? '🔀 シャッフル出題' : '🔢 収録順（第1問〜）';
+    applyTournamentFilter(false);
   });
 
   const btnBuzzer = document.getElementById('btnBuzzer');
