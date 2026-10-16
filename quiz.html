@@ -416,6 +416,126 @@
     font-family: inherit;
   }
 
+  /* 音声回答パネル */
+  .voice-answer-card {
+    background: var(--surface-elevated);
+    border: 1px solid rgba(244, 63, 94, 0.35);
+    border-radius: 18px;
+    padding: 20px 24px;
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+    animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .voice-answer-card.correct {
+    border-color: var(--spotify-green);
+    background: rgba(30, 215, 96, 0.08);
+  }
+  .voice-answer-card.wrong {
+    border-color: var(--buzzer-red);
+    background: rgba(244, 63, 94, 0.1);
+  }
+
+  .voice-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .mic-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-primary);
+  }
+
+  .mic-pulse {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--buzzer-red);
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7);
+    animation: micPulseAnim 1.2s infinite;
+  }
+  @keyframes micPulseAnim {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+  }
+
+  .recognized-transcript {
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--gold);
+    min-height: 28px;
+    word-break: break-all;
+  }
+
+  .voice-actions-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .manual-input-group {
+    display: flex;
+    flex: 1;
+    min-width: 200px;
+    gap: 8px;
+  }
+
+  .manual-answer-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 9999px;
+    padding: 10px 16px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: 700;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .manual-answer-input:focus {
+    border-color: var(--spotify-green);
+  }
+
+  .mini-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 9px 16px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 800;
+    font-family: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .mini-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--border-hover);
+    background: var(--surface-hover);
+  }
+  .mini-btn.primary {
+    background: var(--spotify-green);
+    color: #000;
+    border-color: transparent;
+  }
+  .mini-btn.primary:hover {
+    background: var(--spotify-green-hover);
+  }
+
   /* 解答カード */
   .reveal-card {
     background: var(--surface-elevated);
@@ -529,6 +649,8 @@
     .action-btn { justify-content: center; }
   }
 </style>
+<!-- 漢字の読み（ひらがな）変換用 kuromoji.js (非同期バックグラウンド読込) -->
+<script src="https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/build/kuromoji.js" defer></script>
 </head>
 <body>
 
@@ -566,12 +688,12 @@
     <!-- 1. スタート画面 -->
     <div class="start-view" id="startScreen">
       <div class="badge-voicevox">
-        <span>VOICEVOX 純粋音声</span>
+        <span>VOICEVOX 純粋音声 × 音声認識回答</span>
       </div>
       <h1 class="start-title">クイズの杜 早押し</h1>
       <p class="start-subtitle">
         クイズの杜 950問の過去問アーカイブを収録。<br>
-        本物のVOICEVOX音声に合わせて早押しに挑戦しよう！
+        ボタンを押してマイクで回答！外れたら続きから読み上げが再開します。
       </p>
 
       <div class="char-preview-row">
@@ -619,13 +741,34 @@
           <span id="buzzerBtnText">PUSH !!</span>
         </button>
         <div class="shortcut-indicator">
-          <kbd>Space</kbd> キー または タップでストップ
+          <kbd>Space</kbd> キー または タップで早押し＆音声回答
+        </div>
+      </div>
+
+      <!-- 音声認識＆回答パネル -->
+      <div class="voice-answer-card" id="voiceAnswerCard">
+        <div class="voice-status-row">
+          <div class="mic-indicator" id="micIndicator">
+            <span class="mic-pulse" id="micPulseDot"></span>
+            <span id="voicePromptText">🎙️ マイクに向かって答えをどうぞ...</span>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="mini-btn" id="btnRetryVoice" title="音声認識をやり直す">🎙️ 言い直す</button>
+            <button class="mini-btn" id="btnResumeReading" title="回答をパスして読み上げを再開">▶ 読み上げ再開</button>
+          </div>
+        </div>
+        <div class="recognized-transcript" id="recognizedTranscript"></div>
+        <div class="voice-actions-row">
+          <div class="manual-input-group">
+            <input type="text" class="manual-answer-input" id="manualAnswerInput" placeholder="テキスト入力で回答もできます (Enterで送信)" autocomplete="off">
+            <button class="mini-btn primary" id="btnSubmitManual">回答</button>
+          </div>
         </div>
       </div>
 
       <!-- 解答表示 -->
       <div class="reveal-card" id="revealCard">
-        <div class="reveal-label">正解</div>
+        <div class="reveal-label" id="revealBadgeLabel">正解</div>
         <div class="reveal-title" id="revealAnswerText">答え</div>
         <div class="reveal-description" id="revealDescText" style="display:none;"></div>
       </div>
@@ -679,14 +822,22 @@ let currentAudio = null;
 let syncAnimFrame = null;
 let fallbackTimer = null;
 let prefetchTimer = null;
+let resumeDelayTimer = null;
+let micStartTimer = null;
 let currentSessionId = 0;
 let lastActionTime = 0;
+
+// --- 音声認識 (SpeechRecognition) & 形態素解析 (kuromoji) ---
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let isRecognizing = false;
+let kuromojiTokenizer = null;
 
 // キャッシュ & リクエスト追跡: key = `${speakerId}:${text}`
 const audioCache = new Map();
 const inFlightRequests = new Map();
 
-// Web Audio API（早押しサウンド）
+// Web Audio API（早押し・正解・不正解サウンド）
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx = null;
 
@@ -717,6 +868,317 @@ function playBuzzerSound() {
     osc.start(now);
     osc.stop(now + 0.25);
   } catch(e) {}
+}
+
+// 正解音（ピンポン！ピンポン！）
+function playCorrectSound() {
+  if (!soundEnabled) return;
+  try {
+    initAudioContext();
+    const now = audioCtx.currentTime;
+    const notes = [
+      { freq: 1318.5, start: 0,    dur: 0.14 }, // E6
+      { freq: 1046.5, start: 0.14, dur: 0.22 }, // C6
+      { freq: 1318.5, start: 0.38, dur: 0.14 }, // E6
+      { freq: 1046.5, start: 0.52, dur: 0.35 }  // C6
+    ];
+    for (const n of notes) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(n.freq, now + n.start);
+      gain.gain.setValueAtTime(0.35, now + n.start);
+      gain.gain.exponentialRampToValueAtTime(0.008, now + n.start + n.dur);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now + n.start);
+      osc.stop(now + n.start + n.dur);
+    }
+  } catch(e) {}
+}
+
+// 不正解ブザー音（ブッブー！）
+function playWrongSound() {
+  if (!soundEnabled) return;
+  try {
+    initAudioContext();
+    const now = audioCtx.currentTime;
+    const tones = [
+      { freq: 155, start: 0,    dur: 0.18 },
+      { freq: 130, start: 0.22, dur: 0.34 }
+    ];
+    for (const t of tones) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(t.freq, now + t.start);
+      gain.gain.setValueAtTime(0.3, now + t.start);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + t.start + t.dur);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now + t.start);
+      osc.stop(now + t.start + t.dur);
+    }
+  } catch(e) {}
+}
+
+// --- 漢字の読み仮名化 (kuromoji.js) 初期化 ---
+function initKuromoji() {
+  if (typeof kuromoji === 'undefined') {
+    setTimeout(initKuromoji, 1000);
+    return;
+  }
+  kuromoji.builder({ dicPath: 'https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/' }).build((err, tokenizer) => {
+    if (!err && tokenizer) {
+      kuromojiTokenizer = tokenizer;
+    }
+  });
+}
+
+// カタカナをひらがなに変換
+function toHiragana(str) {
+  return str.replace(/[\u30a1-\u30f6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+}
+
+// 漢数字をアラビア数字に正規化
+function kanjiNumToArabic(str) {
+  const map = { '〇':0, '零':0, '一':1, '二':2, '三':3, '四':4, '五':5, '六':6, '七':7, '八':8, '九':9 };
+  return str.replace(/[〇零一二三四五六七八九十百千]+/g, match => {
+    if (/^[〇零一二三四五六七八九]+$/.test(match)) {
+      return match.replace(/[〇零一二三四五六七八九]/g, c => map[c]);
+    }
+    let total = 0, current = 0;
+    for (const c of match) {
+      if (c in map) current = map[c];
+      else if (c === '十') { total += (current || 1) * 10; current = 0; }
+      else if (c === '百') { total += (current || 1) * 100; current = 0; }
+      else if (c === '千') { total += (current || 1) * 1000; current = 0; }
+    }
+    total += current;
+    return total > 0 ? String(total) : match;
+  });
+}
+
+// 比較用の文字列正規化
+function normalizeQuizStr(str) {
+  if (!str) return '';
+  let s = str.normalize('NFKC').toLowerCase().trim();
+  // 音声回答でつきやすい語尾・フィラーを除去
+  s = s.replace(/^(えーと|えっと|あのー|あの|答えは|こたえは)\s*/, '');
+  s = s.replace(/(です|ます|だ|かな|でしょう|だと思います|ですか)$/, '');
+  s = toHiragana(s);
+  s = kanjiNumToArabic(s);
+  s = s.replace(/[『』「」【】〔〕［］\[\]"'”’・、。，．！？!?〜～~\s　\-_]/g, '');
+  return s;
+}
+
+// kuromoji がロード済みならテキストをすべて「ひらがな読み」に変換して正規化
+function toPhoneticNormalized(str) {
+  if (!str) return '';
+  const cleaned = str
+    .replace(/^(えーと|えっと|あのー|あの|答えは|こたえは)\s*/, '')
+    .replace(/(です|ます|だ|かな|でしょう|だと思います|ですか)$/, '');
+  if (!kuromojiTokenizer) return normalizeQuizStr(cleaned);
+  try {
+    const tokens = kuromojiTokenizer.tokenize(cleaned);
+    const reading = tokens.map(t => t.reading || t.surface_form).join('');
+    return normalizeQuizStr(reading);
+  } catch (e) {
+    return normalizeQuizStr(cleaned);
+  }
+}
+
+// 問題データの正解文字列から有効な正解パターン一覧を抽出
+function extractValidAnswers(rawAnswer) {
+  const rawSet = new Set();
+  // 「〜は不正解」「〜は不可」などの注記カッコを除去
+  const fullNoNotes = rawAnswer.replace(/[（(][^）)]*(?:不正解|不可|×|初キャップ|理由|から)[^）)]*[）)]/g, '').trim();
+
+  // 1. カッコを除いた基本形
+  const base = fullNoNotes.replace(/[（(][^）)]*[）)]/g, '').trim();
+  if (base) rawSet.add(base);
+
+  // 2. カッコ記号だけ外した連結形（例: メイベリン（・ニューヨーク））
+  const combined = fullNoNotes.replace(/[（()）]/g, '').trim();
+  if (combined) rawSet.add(combined);
+
+  // 3. カッコ内の別解・読み仮名（例: 伊藤博文（伊藤のみで正解）、澤潟屋（おもだか））
+  const parenRegex = /[（(]([^）)]+)[）)]/g;
+  let m;
+  while ((m = parenRegex.exec(rawAnswer)) !== null) {
+    const inner = m[1].trim();
+    if (/不正解|不可|×/.test(inner)) continue;
+    if (/のみで正解|でも正解|可/.test(inner)) {
+      const cleaned = inner.replace(/のみで正解|でも正解|のみ可|可/g, '');
+      for (const part of cleaned.split(/[、,／/]/)) {
+        if (part.trim()) rawSet.add(part.trim());
+      }
+    } else {
+      for (const part of inner.split(/[、,／/]/)) {
+        if (part.trim().length >= 2) rawSet.add(part.trim());
+      }
+    }
+  }
+
+  // 4. インラインふりがな置換形（例: 織豊(しょくほう)時代 -> しょくほう時代）
+  const inlineReading = fullNoNotes.replace(/[^\s（(]+[（(]([^）)]+)[）)]/g, '$1');
+  if (inlineReading && inlineReading !== fullNoNotes) {
+    rawSet.add(inlineReading);
+  }
+
+  const normSet = new Set();
+  for (const item of rawSet) {
+    const n1 = normalizeQuizStr(item);
+    if (n1) normSet.add(n1);
+    const n2 = toPhoneticNormalized(item);
+    if (n2) normSet.add(n2);
+  }
+  return Array.from(normSet);
+}
+
+// 音声認識候補リストと正解の照合
+function isQuizAnswerMatch(spokenCandidates, rawAnswer) {
+  const validTargets = extractValidAnswers(rawAnswer);
+  if (validTargets.length === 0) return false;
+
+  for (const cand of spokenCandidates) {
+    const forms = [normalizeQuizStr(cand), toPhoneticNormalized(cand)].filter(Boolean);
+    for (const s of forms) {
+      if (!s) continue;
+      for (const target of validTargets) {
+        if (s === target) return true;
+        // 3文字以上の正解が発話内に完全に含まれている場合（例: 「答えは北岳です」など）
+        if (target.length >= 2 && s.includes(target) && s.length <= target.length + 5) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+// 音声認識の停止
+function stopVoiceRecognition() {
+  if (micStartTimer) {
+    clearTimeout(micStartTimer);
+    micStartTimer = null;
+  }
+  isRecognizing = false;
+  if (recognition) {
+    try {
+      recognition._ignoreEvents = true;
+      recognition.abort();
+    } catch (e) {}
+    recognition = null;
+  }
+}
+
+// 早押し後の音声認識スタート
+function startVoiceRecognition(sessionId) {
+  stopVoiceRecognition();
+  if (sessionId !== currentSessionId || isRevealed) return;
+
+  const card = document.getElementById('voiceAnswerCard');
+  const promptEl = document.getElementById('voicePromptText');
+  const transcriptEl = document.getElementById('recognizedTranscript');
+  const pulseDot = document.getElementById('micPulseDot');
+
+  card.className = 'voice-answer-card';
+  card.style.display = 'flex';
+  transcriptEl.innerText = '';
+  pulseDot.style.display = 'inline-block';
+
+  if (!SpeechRecognition) {
+    promptEl.innerText = '⌨️ お使いのブラウザは音声認識非対応です。下の欄に入力してください';
+    pulseDot.style.display = 'none';
+    document.getElementById('manualAnswerInput').focus();
+    return;
+  }
+
+  promptEl.innerText = '🎙️ マイクに向かって答えをどうぞ...';
+
+  try {
+    const rec = new SpeechRecognition();
+    rec._ignoreEvents = false;
+    rec.lang = 'ja-JP';
+    rec.interimResults = true;
+    rec.maxAlternatives = 5;
+    rec.continuous = false;
+    recognition = rec;
+    isRecognizing = true;
+
+    rec.onresult = (event) => {
+      if (rec._ignoreEvents || sessionId !== currentSessionId || isRevealed) return;
+      const result = event.results[event.results.length - 1];
+      const topTranscript = result[0].transcript.trim();
+      transcriptEl.innerText = `「${topTranscript}」`;
+
+      if (result.isFinal) {
+        const alternatives = [];
+        for (let i = 0; i < result.length; i++) {
+          if (result[i].transcript) alternatives.push(result[i].transcript.trim());
+        }
+        stopVoiceRecognition();
+        evaluateUserAnswer(alternatives, topTranscript, sessionId);
+      }
+    };
+
+    rec.onerror = (event) => {
+      if (rec._ignoreEvents || sessionId !== currentSessionId || isRevealed) return;
+      isRecognizing = false;
+      pulseDot.style.display = 'none';
+      if (event.error === 'no-speech') {
+        promptEl.innerText = '🎙️ 音声が検出されませんでした（「言い直す」または「読み上げ再開」）';
+      } else if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        promptEl.innerText = '⚠️ マイク権限がオフです。下のテキスト欄から回答できます';
+      } else {
+        promptEl.innerText = '🎙️ 聞き取れませんでした（「言い直す」またはテキスト入力）';
+      }
+    };
+
+    rec.onend = () => {
+      if (rec._ignoreEvents || sessionId !== currentSessionId || isRevealed) return;
+      isRecognizing = false;
+    };
+
+    rec.start();
+  } catch (e) {
+    pulseDot.style.display = 'none';
+    promptEl.innerText = '🎙️ 音声認識を開始できませんでした。テキストで回答できます';
+  }
+}
+
+// ユーザーの回答（音声またはテキスト）を判定し、正解なら解答表示・不正解なら読み上げ再開
+function evaluateUserAnswer(candidates, displayWord, sessionId) {
+  if (sessionId !== currentSessionId || !currentQuestion || isRevealed) return;
+
+  const card = document.getElementById('voiceAnswerCard');
+  const promptEl = document.getElementById('voicePromptText');
+  const transcriptEl = document.getElementById('recognizedTranscript');
+  const pulseDot = document.getElementById('micPulseDot');
+
+  pulseDot.style.display = 'none';
+  transcriptEl.innerText = `「${displayWord}」`;
+
+  const correct = isQuizAnswerMatch(candidates, currentQuestion.a);
+
+  if (correct) {
+    card.className = 'voice-answer-card correct';
+    promptEl.innerText = '⭕ 正解！！ お見事！';
+    playCorrectSound();
+    revealAnswer(true);
+  } else {
+    card.className = 'voice-answer-card wrong';
+    promptEl.innerText = '❌ 不正解！ 読み上げを再開します...';
+    playWrongSound();
+
+    if (resumeDelayTimer) clearTimeout(resumeDelayTimer);
+    resumeDelayTimer = setTimeout(() => {
+      if (sessionId === currentSessionId && !isRevealed) {
+        resumeQuestionPlayback();
+      }
+    }, 950);
+  }
 }
 
 // TTS Quest API 経由で VOICEVOX 音声を取得（429リトライ・ポーリング・キャッシュ付き）
@@ -791,6 +1253,7 @@ function prefetchQuestion(index, speakerId = selectedSpeakerId) {
 document.addEventListener('DOMContentLoaded', () => {
   setupEvents();
   loadQuestions();
+  initKuromoji();
 });
 
 // 問題データ読み込み
@@ -838,7 +1301,7 @@ function updateStatusBadge(state) {
     tag.innerHTML = `<span class="eq-bars"><span></span><span></span><span></span></span><span>VOICEVOX</span>`;
   } else if (state === 'stopped') {
     tag.className = 'status-tag stopped';
-    tag.innerHTML = `<span class="pulse-dot"></span><span>STOPPED</span>`;
+    tag.innerHTML = `<span class="pulse-dot"></span><span>ANSWERING</span>`;
   } else if (state === 'finished') {
     tag.className = 'status-tag playing';
     tag.innerHTML = `<span class="pulse-dot"></span><span>DONE</span>`;
@@ -847,7 +1310,7 @@ function updateStatusBadge(state) {
 
 // 問題の出題
 async function startQuestion(index) {
-  // 既存の再生・タイマー・旧セッションを完全停止し、新しいセッションIDを発行
+  // 既存の再生・タイマー・音声認識・旧セッションを完全停止し、新しいセッションIDを発行
   stopCurrentPlayback();
   const sessionId = currentSessionId;
   const speakerAtStart = selectedSpeakerId;
@@ -868,6 +1331,8 @@ async function startQuestion(index) {
   document.getElementById('currentTrackNum').innerText = `Q.${currentIndex + 1}`;
   document.getElementById('currentTrackSource').innerText = currentQuestion.source || 'クイズの杜';
   document.getElementById('cursorTicker').style.display = 'none';
+  document.getElementById('voiceAnswerCard').style.display = 'none';
+  document.getElementById('manualAnswerInput').value = '';
   document.getElementById('revealCard').style.display = 'none';
   document.getElementById('btnReveal').style.display = 'flex';
 
@@ -948,6 +1413,7 @@ function playVoicevoxQuestion(mp3Url, fullText, sessionId) {
     if (sessionId !== currentSessionId || audio._aborted || isBuzzerStopped) return;
     audio.playbackRate = currentSpeed;
     updateStatusBadge('playing');
+    document.getElementById('cursorTicker').style.display = 'inline-block';
     startAudioSyncLoop(audio, fullText, sessionId);
   });
 
@@ -970,7 +1436,7 @@ function playVoicevoxQuestion(mp3Url, fullText, sessionId) {
     fallbackTextStream(fullText, sessionId);
   });
 
-  audio.play().catch((err) => {
+  audio.play().catch(() => {
     if (sessionId !== currentSessionId || audio._aborted || isBuzzerStopped) return;
     fallbackTextStream(fullText, sessionId);
   });
@@ -1037,9 +1503,79 @@ function renderTextStream(fullText, count) {
   container.innerText = fullText.substring(0, count);
 }
 
-// 再生・タイマー・非同期処理の完全停止
+// 早押し時の一時停止（Audioインスタンスと再生位置を保持）
+function pauseCurrentPlaybackForBuzzer() {
+  if (syncAnimFrame) {
+    cancelAnimationFrame(syncAnimFrame);
+    syncAnimFrame = null;
+  }
+  if (fallbackTimer) {
+    clearInterval(fallbackTimer);
+    fallbackTimer = null;
+  }
+  if (resumeDelayTimer) {
+    clearTimeout(resumeDelayTimer);
+    resumeDelayTimer = null;
+  }
+  if (currentAudio && !currentAudio._aborted) {
+    try {
+      currentAudio.pause();
+    } catch(e) {}
+  }
+}
+
+// 不正解時または「読み上げ再開」時に続きから再生を再開
+function resumeQuestionPlayback() {
+  if (!isGameStarted || isRevealed || !currentQuestion) return;
+
+  stopVoiceRecognition();
+  if (resumeDelayTimer) {
+    clearTimeout(resumeDelayTimer);
+    resumeDelayTimer = null;
+  }
+
+  isBuzzerStopped = false;
+  document.getElementById('voiceAnswerCard').style.display = 'none';
+  document.getElementById('manualAnswerInput').value = '';
+
+  const btnBuzzer = document.getElementById('btnBuzzer');
+  btnBuzzer.disabled = false;
+  btnBuzzer.classList.remove('stopped');
+  document.getElementById('buzzerBtnText').innerText = 'PUSH !!';
+
+  const fullText = currentQuestion.q;
+  renderTextStream(fullText, displayedCharCount);
+
+  // すでに問題文の最後まで読み終わっていた場合
+  if (displayedCharCount >= fullText.length) {
+    document.getElementById('cursorTicker').style.display = 'none';
+    updateStatusBadge('finished');
+    return;
+  }
+
+  const sessionId = currentSessionId;
+  document.getElementById('cursorTicker').style.display = 'inline-block';
+  updateStatusBadge('playing');
+
+  if (currentAudio && !currentAudio._aborted && !currentAudio.ended) {
+    currentAudio.playbackRate = currentSpeed;
+    currentAudio.muted = !soundEnabled;
+    currentAudio.play().catch(() => {
+      fallbackTextStream(fullText, sessionId);
+    });
+  } else {
+    fallbackTextStream(fullText, sessionId);
+  }
+}
+
+// 再生・タイマー・音声認識・非同期処理の完全停止（問題切り替え・終了時）
 function stopCurrentPlayback() {
   currentSessionId++;
+  stopVoiceRecognition();
+  if (resumeDelayTimer) {
+    clearTimeout(resumeDelayTimer);
+    resumeDelayTimer = null;
+  }
   if (syncAnimFrame) {
     cancelAnimationFrame(syncAnimFrame);
     syncAnimFrame = null;
@@ -1063,18 +1599,18 @@ function stopCurrentPlayback() {
   }
 }
 
-// 早押しボタン押下
+// 早押しボタン押下（一時停止して音声認識を開始）
 function onBuzzerPress() {
-  if (!isGameStarted || isBuzzerStopped || !currentQuestion) return;
+  if (!isGameStarted || isBuzzerStopped || isRevealed || !currentQuestion) return;
   isBuzzerStopped = true;
 
-  stopCurrentPlayback();
+  pauseCurrentPlaybackForBuzzer();
   playBuzzerSound();
 
   const btnBuzzer = document.getElementById('btnBuzzer');
   btnBuzzer.classList.add('stopped');
   btnBuzzer.disabled = true;
-  document.getElementById('buzzerBtnText').innerText = 'STOPPED';
+  document.getElementById('buzzerBtnText').innerText = 'ANSWERING...';
 
   document.getElementById('cursorTicker').style.display = 'none';
   updateStatusBadge('stopped');
@@ -1087,16 +1623,26 @@ function onBuzzerPress() {
 
   const container = document.getElementById('textStream');
   container.innerHTML = escapeHtml(before) + `<span class="highlight-freeze">${escapeHtml(frozenChar)}</span>`;
+
+  // 早押し効果音が鳴り終わる直後（260ms後）にマイク音声認識を自動開始
+  const sessionId = currentSessionId;
+  micStartTimer = setTimeout(() => {
+    startVoiceRecognition(sessionId);
+  }, 260);
 }
 
 // 答え表示
-function revealAnswer() {
+function revealAnswer(fromCorrectVoice = false) {
   if (!isGameStarted || isRevealed || !currentQuestion) return;
   isRevealed = true;
   isBuzzerStopped = true;
 
-  // 読み上げ中に「答えを見る」を押した場合も確実に音声を止める
+  // 読み上げ中・音声認識中に「答えを見る」を押した場合も確実に完全停止
   stopCurrentPlayback();
+
+  if (!fromCorrectVoice) {
+    document.getElementById('voiceAnswerCard').style.display = 'none';
+  }
 
   const btnBuzzer = document.getElementById('btnBuzzer');
   btnBuzzer.classList.add('stopped');
@@ -1107,6 +1653,7 @@ function revealAnswer() {
   document.getElementById('textStream').innerText = currentQuestion.q;
   document.getElementById('cursorTicker').style.display = 'none';
 
+  document.getElementById('revealBadgeLabel').innerText = fromCorrectVoice ? '⭕ 正解！' : '正解';
   document.getElementById('revealAnswerText').innerText = currentQuestion.a;
   const descEl = document.getElementById('revealDescText');
   if (currentQuestion.desc && currentQuestion.desc.trim()) {
@@ -1130,6 +1677,15 @@ function nextQuestion() {
   startQuestion(currentIndex + 1);
 }
 
+// 手動テキスト回答の送信
+function submitManualAnswer() {
+  const input = document.getElementById('manualAnswerInput');
+  const val = input.value.trim();
+  if (!val || !currentQuestion || isRevealed) return;
+  stopVoiceRecognition();
+  evaluateUserAnswer([val], val, currentSessionId);
+}
+
 // イベントリスナー設定
 function setupEvents() {
   document.getElementById('btnStartGame').addEventListener('click', (e) => {
@@ -1147,9 +1703,36 @@ function setupEvents() {
     onBuzzerPress();
   }, { passive: false });
 
+  document.getElementById('btnRetryVoice').addEventListener('click', (e) => {
+    e.currentTarget.blur();
+    if (resumeDelayTimer) {
+      clearTimeout(resumeDelayTimer);
+      resumeDelayTimer = null;
+    }
+    startVoiceRecognition(currentSessionId);
+  });
+
+  document.getElementById('btnResumeReading').addEventListener('click', (e) => {
+    e.currentTarget.blur();
+    resumeQuestionPlayback();
+  });
+
+  document.getElementById('btnSubmitManual').addEventListener('click', (e) => {
+    e.currentTarget.blur();
+    submitManualAnswer();
+  });
+
+  document.getElementById('manualAnswerInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      submitManualAnswer();
+    }
+  });
+
   document.getElementById('btnReveal').addEventListener('click', (e) => {
     e.currentTarget.blur();
-    revealAnswer();
+    revealAnswer(false);
   });
   document.getElementById('btnNext').addEventListener('click', (e) => {
     e.currentTarget.blur();
@@ -1214,15 +1797,13 @@ function setupEvents() {
       e.preventDefault();
       if (!isBuzzerStopped) {
         onBuzzerPress();
-      } else if (!isRevealed) {
-        revealAnswer();
-      } else {
+      } else if (isRevealed) {
         nextQuestion();
       }
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (!isRevealed) {
-        revealAnswer();
+        revealAnswer(false);
       } else {
         nextQuestion();
       }
